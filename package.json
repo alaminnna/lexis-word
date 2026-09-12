@@ -2,6 +2,13 @@
   "name": "lexis",
   "private": true,
   "version": "1.0.0",
+  "description": "Calm, offline-first IELTS Academic vocabulary app — 499 words, adaptive 9-dimension memory model.",
+  "license": "MIT",
+  "author": "Al A Min (Alaminnna) <https://alaminnna.ami.bd>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alaminnna/lexis-word.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

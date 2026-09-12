@@ -1,5 +1,8 @@
 # Lexis — IELTS Academic vocabulary, the calm way
 
+[![CI](https://github.com/alaminnna/lexis-word/actions/workflows/ci.yml/badge.svg)](https://github.com/alaminnna/lexis-word/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
+
 I'm building Lexis because most vocab apps test recognition and call it learning.
 You tap "I know this" on a flashcard and feel productive. Then the word shows up
 in a listening test and it's gone.
@@ -125,3 +128,12 @@ I build in the open: small tools, honest progress, no hype.
 - Website: https://alaminnna.ami.bd
 - GitHub: https://github.com/alaminnna
 - LinkedIn: https://www.linkedin.com/in/alaminnna/
+
+## Contributing
+
+Bug fixes, better Bengali glosses, new drill ideas — all welcome.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and ground rules.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Use it, fork it, learn from it.
