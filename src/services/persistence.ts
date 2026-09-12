@@ -12,6 +12,7 @@ export const SETTINGS_KEY = 'lexis:settings:v1';
 const PROGRESS_VERSION = 1;
 
 export const DEFAULT_SETTINGS: UserSettings = {
+  displayName: '',
   dailyNewTarget: 8,
   maxActiveWords: 90,
   sessionLengthTarget: 15,
@@ -136,6 +137,7 @@ function validateSettings(data: unknown): UserSettings {
   if (typeof data !== 'object' || data === null) throw new Error('Settings import is not an object.');
   const d = data as Record<string, unknown>;
   const s: UserSettings = { ...DEFAULT_SETTINGS };
+  if (typeof d.displayName === 'string') s.displayName = d.displayName.trim().slice(0, 40);
   if (typeof d.dailyNewTarget === 'number') s.dailyNewTarget = Math.min(15, Math.max(4, Math.round(d.dailyNewTarget)));
   if (typeof d.maxActiveWords === 'number') s.maxActiveWords = Math.min(200, Math.max(20, Math.round(d.maxActiveWords)));
   if (typeof d.sessionLengthTarget === 'number') {

@@ -127,6 +127,7 @@ export interface HapticsSettings {
 }
 
 export interface UserSettings {
+  displayName: string;           // learner's name from onboarding (greetings); '' = unknown
   dailyNewTarget: number;        // default 8, clamp 4–15
   maxActiveWords: number;        // default 90
   sessionLengthTarget: number;   // default 15

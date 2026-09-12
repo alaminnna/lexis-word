@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSettings } from '../../store/settings';
-import { useProgress } from '../../store/progress';
+import { useSettings, settingsSnapshot } from '../../store/settings';
+import { useProgress, progressSnapshot } from '../../store/progress';
+import { persistence } from '../../services/persistence';
 import { speech, getSpeechAvailable } from '../../services/speech';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -9,7 +10,7 @@ import { SegmentedControl } from '../../components/ui/SegmentedControl';
 import { Icon } from '../../components/ui/Icon';
 
 /**
- * First-run onboarding: ≤90 seconds, 4 steps, skippable (§17).
+ * First-run onboarding: ≤90 seconds, 5 steps, skippable (§17).
  * Ends with a 3-line explanation of the method (trust-building).
  */
 export default function OnboardingPage() {
@@ -17,11 +18,26 @@ export default function OnboardingPage() {
   const settings = useSettings();
   const setDone = useProgress((s) => s.setOnboardingDone);
   const [step, setStep] = useState(0);
+  const [name, setName] = useState(settings.displayName);
   const [goal, setGoal] = useState<'abroad' | 'work' | 'migration'>('abroad');
   const [voiceState, setVoiceState] = useState<'idle' | 'playing' | 'ok' | 'unavailable'>('idle');
 
+  const saveName = (raw: string): void => {
+    settings.update({ displayName: raw.trim().slice(0, 40) });
+  };
+
   const finish = (): void => {
+    saveName(name);
     setDone();
+    // /onboarding never mounts AppLayout, so the debounced persistence
+    // subscriber isn't running here — save synchronously or the flag (and
+    // every choice above) dies with this page and onboarding reappears.
+    try {
+      persistence.saveProgress(progressSnapshot());
+      persistence.saveSettings(settingsSnapshot());
+    } catch {
+      // storage errors surface via the quota flow; onboarding still completes
+    }
     navigate('/', { replace: true });
   };
 
@@ -42,7 +58,25 @@ export default function OnboardingPage() {
   };
 
   const steps = [
-    // 0 — goal
+    // 0 — name
+    <div key="name">
+      <h1 className="font-display text-3xl font-medium tracking-tight">What should we call you?</h1>
+      <p className="mt-2 text-ink-soft">Your name shows up in greetings around the app. You can change it anytime in Settings.</p>
+      <div className="mt-5">
+        <label htmlFor="onboarding-name" className="mb-1 block font-medium">Your name</label>
+        <input
+          id="onboarding-name"
+          value={name}
+          onChange={(e) => setName(e.target.value.slice(0, 40))}
+          onBlur={(e) => saveName(e.target.value)}
+          placeholder="e.g. Arif"
+          autoComplete="given-name"
+          maxLength={40}
+          className="min-h-[48px] w-full rounded-xl border border-line-strong bg-paper px-3 text-[16px] transition-calm placeholder:text-ink-faint focus:border-accent focus:outline-none"
+        />
+      </div>
+    </div>,
+    // 1 — goal
     <div key="goal">
       <h1 className="font-display text-3xl font-medium tracking-tight">What brings you here?</h1>
       <p className="mt-2 text-ink-soft">This sets a sensible starting pace. You can change everything later.</p>
@@ -152,13 +186,13 @@ export default function OnboardingPage() {
           Skip setup
         </button>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-ink-faint" aria-hidden>{step + 1} / 4</span>
+          <span className="text-sm text-ink-faint" aria-hidden>{step + 1} / 5</span>
           {step > 0 && (
             <Button variant="ghost" onClick={() => setStep(step - 1)}>
               Back
             </Button>
           )}
-          {step < 3 ? (
+          {step < 4 ? (
             <Button onClick={() => setStep(step + 1)}>
               Continue <Icon name="arrow-right" size={16} />
             </Button>

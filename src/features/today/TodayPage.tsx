@@ -101,7 +101,7 @@ export default function TodayPage() {
     <div className="space-y-5">
       <header>
         <h1 className="font-display text-[clamp(1.75rem,5vw,2.5rem)] font-medium tracking-tight">
-          {greeting()}.
+          {greeting()}{settings.displayName ? `, ${settings.displayName}` : ''}.
         </h1>
         {preview ? (
           <p className="mt-1 text-lg text-ink-soft">

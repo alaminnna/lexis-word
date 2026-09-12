@@ -10,7 +10,7 @@ const NOW = 1_700_000_000_000;
 const DAY = 86_400_000;
 
 const SETTINGS: UserSettings = {
-  dailyNewTarget: 8, maxActiveWords: 90, sessionLengthTarget: 15,
+  displayName: '', dailyNewTarget: 8, maxActiveWords: 90, sessionLengthTarget: 15,
   bengaliPolicy: 'on-demand', speechRate: 1, theme: 'light', seed: 9,
   sound: DEFAULT_SETTINGS.sound, haptics: DEFAULT_SETTINGS.haptics,
 };

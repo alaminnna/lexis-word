@@ -140,6 +140,7 @@ function RailLink({ to, label, icon, end }: { to: string; label: string; icon: I
 
 export function AppLayout() {
   const theme = useSettings((s) => s.theme);
+  const displayName = useSettings((s) => s.displayName);
   const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
@@ -169,7 +170,9 @@ export function AppLayout() {
             <RailLink key={item.to} {...item} />
           ))}
         </nav>
-        <p className="mt-auto px-3 pt-6 text-xs text-ink-faint">IELTS Academic · 499 words</p>
+        <p className="mt-auto px-3 pt-6 text-xs text-ink-faint">
+          {displayName ? `${displayName} · ` : ''}IELTS Academic · 499 words
+        </p>
       </aside>
 
       <div className="md:pl-60">

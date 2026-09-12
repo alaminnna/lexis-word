@@ -13,11 +13,42 @@ export interface SpeakOptions {
   rate?: number;
 }
 
-/** Preferred voice order for IELTS listening (British → Australian → US). */
-const LANG_PREFERENCE = ['en-GB', 'en-AU', 'en-US'];
+/** Preferred voice order — US first (learner default), female preferred. */
+const LANG_PREFERENCE = ['en-US', 'en-GB', 'en-AU'];
 
-function pickDefault(voices: VoiceInfo[]): VoiceInfo | null {
-  for (const lang of LANG_PREFERENCE) {
+/** Web Speech API exposes no gender flag — match well-known US female voice names. */
+const FEMALE_HINTS = [
+  'female', 'samantha', 'zira', 'aria', 'jenny', 'ava', 'allison', 'susan',
+  'victoria', 'tessa', 'emma', 'michelle', 'olivia', 'sophia', 'mia',
+  'isabella', 'google us english',
+];
+const MALE_HINTS = [
+  'male', 'david', 'mark', 'alex', 'daniel', 'fred', 'james', 'guy',
+  'christopher', 'eric', 'jacob', 'ryan', 'brian', 'andrew', 'matthew',
+  'josh', 'george', 'thomas',
+];
+
+function femaleScore(name: string): number {
+  const n = name.toLowerCase();
+  if (MALE_HINTS.some((h) => n.includes(h))) return -2;
+  let score = 0;
+  for (const h of FEMALE_HINTS) {
+    if (n.includes(h)) score += 2;
+  }
+  // "Natural" neural voices with no male marker skew female on Edge/Windows.
+  if (n.includes('natural') && score >= 0) score += 1;
+  return score;
+}
+
+export function pickDefault(voices: VoiceInfo[]): VoiceInfo | null {
+  // 1) US voices first, highest female score on top.
+  const us = voices.filter((x) => x.lang.toLowerCase().startsWith('en-us'));
+  if (us.length > 0) {
+    const sorted = [...us].sort((a, b) => femaleScore(b.name) - femaleScore(a.name));
+    return sorted[0] ?? null;
+  }
+  // 2) Fall back through remaining preferences.
+  for (const lang of LANG_PREFERENCE.slice(1)) {
     const v = voices.find((x) => x.lang.toLowerCase().startsWith(lang.toLowerCase()));
     if (v) return v;
   }
@@ -51,7 +82,7 @@ class WebSpeechService {
 
   getVoices(): Promise<VoiceInfo[]> {
     if (this.testMode) {
-      return Promise.resolve([{ uri: 'test-voice', name: 'Test Voice', lang: 'en-GB' }]);
+      return Promise.resolve([{ uri: 'test-voice', name: 'Test Voice', lang: 'en-US' }]);
     }
     if (!this.isSupported()) return Promise.resolve([]);
     const synth = window.speechSynthesis;
@@ -97,7 +128,7 @@ class WebSpeechService {
       this.pending = { reject };
       const utter = new SpeechSynthesisUtterance(text);
       utter.rate = options.rate ?? 1;
-      utter.lang = 'en-GB';
+      utter.lang = 'en-US';
       const settle = (fn: () => void): void => {
         if (this.pending) {
           this.pending = null;
@@ -113,6 +144,21 @@ class WebSpeechService {
         if (match) {
           utter.voice = match;
           utter.lang = match.lang;
+        }
+      } else {
+        // Automatic mode: pin the US-female default synchronously so the
+        // browser doesn't fall back to a male/system voice.
+        try {
+          const auto = pickDefault(
+            synth.getVoices().map((v) => ({ uri: v.voiceURI, name: v.name, lang: v.lang })),
+          );
+          const match = auto && synth.getVoices().find((v) => v.voiceURI === auto.uri);
+          if (match) {
+            utter.voice = match;
+            utter.lang = match.lang;
+          }
+        } catch {
+          // best-effort — utter.lang='en-US' below still guides the engine
         }
       }
       try {

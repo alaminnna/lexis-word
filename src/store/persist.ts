@@ -59,7 +59,14 @@ export function startPersistence(): void {
   if (started) return;
   started = true;
 
-  hydrateStores();
+  // App.tsx already hydrated synchronously before first paint. Re-hydrating
+  // here would reload STALE localStorage and clobber in-memory choices made
+  // on /onboarding (which never mounts AppLayout, so no subscriber was
+  // saving them) — that clobber is what sent finish() straight back to
+  // onboarding a second time. Only hydrate if boot hydration never ran.
+  if (!useProgress.getState().hydrated) {
+    hydrateStores();
+  }
 
   useProgress.subscribe(scheduleProgress);
   useSettings.subscribe(scheduleSettings);

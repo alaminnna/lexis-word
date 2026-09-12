@@ -218,8 +218,14 @@ function VoiceSettings() {
           onChange={(e) => update({ preferredVoiceURI: e.target.value || undefined })}
           className="min-h-[44px] w-full cursor-pointer rounded-lg border border-line-strong bg-paper px-3"
         >
-          <option value="">Automatic (British → Australian → US)</option>
-          {voices.map((v) => (
+          <option value="">Automatic (US female first)</option>
+          {[...voices]
+            .sort((a, b) => {
+              const usA = a.lang.toLowerCase().startsWith('en-us') ? 0 : 1;
+              const usB = b.lang.toLowerCase().startsWith('en-us') ? 0 : 1;
+              return usA - usB || a.name.localeCompare(b.name);
+            })
+            .map((v) => (
             <option key={v.uri} value={v.uri}>{v.name} — {v.lang}</option>
           ))}
         </select>
@@ -446,6 +452,23 @@ export default function SettingsPage() {
   return (
     <div className="space-y-4">
       <PageHeader title="Settings" sub="Study load, language, voice, and your data." />
+      <Card className="space-y-3">
+        <h2 className="font-display text-xl">Profile</h2>
+        <div>
+          <label htmlFor="profile-name" className="mb-1 block font-medium">Your name</label>
+          <p className="mb-2 text-sm text-ink-soft">Shown in greetings around the app.</p>
+          <input
+            id="profile-name"
+            value={settings.displayName}
+            onChange={(e) => settings.update({ displayName: e.target.value.slice(0, 40) })}
+            onBlur={(e) => settings.update({ displayName: e.target.value.trim().slice(0, 40) })}
+            placeholder="e.g. Arif"
+            autoComplete="given-name"
+            maxLength={40}
+            className="min-h-[44px] w-full rounded-lg border border-line-strong bg-paper px-3 placeholder:text-ink-faint focus:border-accent focus:outline-none"
+          />
+        </div>
+      </Card>
       <Card className="space-y-5">
         <h2 className="font-display text-xl">Study load</h2>
         <Stepper label="New words per day" value={settings.dailyNewTarget} min={4} max={15}

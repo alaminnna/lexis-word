@@ -62,6 +62,35 @@ export default function WordDetailPage() {
   const [failed, setFailed] = useState(false);
   const now = Date.now();
 
+  // Prev / next in rank order so a learner can walk word → word directly
+  // without bouncing back to /library every time.
+  const wordIndex = word ? WORDS.findIndex((w) => w.id === word.id) : -1;
+  const prevWord = wordIndex > 0 ? WORDS[wordIndex - 1] : undefined;
+  const nextWord = wordIndex >= 0 && wordIndex < WORDS.length - 1 ? WORDS[wordIndex + 1] : undefined;
+
+  const goBack = (): void => {
+    // Deep link (no in-app history) → Back would leave the app; fall back to library.
+    if (window.history.state?.idx > 0) navigate(-1);
+    else navigate('/library');
+  };
+
+  // Word → word navigation reuses this component instance (same /word/:id route):
+  // reset scroll + refetch enrichment keyed by id so the old word never lingers.
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [id]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.key === 'ArrowLeft' && prevWord) navigate(`/word/${prevWord.id}`);
+      else if (e.key === 'ArrowRight' && nextWord) navigate(`/word/${nextWord.id}`);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [prevWord, nextWord, navigate]);
+
   useEffect(() => {
     if (!word) return;
     setEntry(undefined);
@@ -75,7 +104,7 @@ export default function WordDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [word]);
+  }, [id, word]);
 
   if (!word) {
     return (
@@ -112,11 +141,36 @@ export default function WordDetailPage() {
 
   return (
     <div className="space-y-5">
-      <button onClick={() => navigate(-1)} className="inline-flex min-h-[44px] cursor-pointer items-center gap-1 text-sm text-ink-soft hover:text-ink">
-        <Icon name="chevron-left" size={16} /> Back
-      </button>
+      <div className="sticky top-0 z-10 -mx-1 flex items-center justify-between gap-2 bg-paper/95 px-1 py-2 backdrop-blur">
+        <button onClick={goBack} className="inline-flex min-h-[44px] cursor-pointer items-center gap-1 rounded-full border border-line-strong bg-paper px-3 text-sm font-medium text-ink shadow-sm transition-calm hover:border-accent hover:text-accent-deep">
+          <Icon name="chevron-left" size={16} /> Back
+        </button>
+        <nav aria-label="Walk through words" className="flex items-center gap-1.5">
+          <button
+            onClick={() => prevWord && navigate(`/word/${prevWord.id}`)}
+            disabled={!prevWord}
+            aria-label={prevWord ? `Previous word: ${prevWord.word}` : 'No previous word'}
+            title={prevWord ? `← ${prevWord.word}` : 'First word'}
+            className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-line-strong bg-paper text-ink shadow-sm transition-calm hover:border-accent hover:text-accent-deep disabled:cursor-default disabled:opacity-35 disabled:hover:border-line-strong disabled:hover:text-ink"
+          >
+            <Icon name="chevron-left" size={18} />
+          </button>
+          <span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent-deep tabular-nums dark:text-accent" aria-live="polite">
+            {wordIndex + 1} / {WORDS.length}
+          </span>
+          <button
+            onClick={() => nextWord && navigate(`/word/${nextWord.id}`)}
+            disabled={!nextWord}
+            aria-label={nextWord ? `Next word: ${nextWord.word}` : 'No next word'}
+            title={nextWord ? `${nextWord.word} →` : 'Last word'}
+            className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-accent text-paper shadow-sm transition-calm hover:brightness-110 disabled:cursor-default disabled:bg-line disabled:text-ink-faint disabled:hover:brightness-100"
+          >
+            <Icon name="chevron-right" size={18} />
+          </button>
+        </nav>
+      </div>
 
-      <WordHero word={word} recallStrength={progress?.dimensions.recall.strength ?? 0} large />
+      <WordHero word={word} recallStrength={progress?.dimensions.recall.strength ?? 0} large autoPlay />
       <p className="text-sm text-ink-faint">
         {wordStageName(word.stage)} · word {word.rank} of {WORDS.length} · Topic: {topicOf(word)}
       </p>
@@ -273,6 +327,28 @@ export default function WordDetailPage() {
           <p className="mt-2 text-xs text-ink-faint">Logged {dayKey(history[0]!.timestamp) === dayKey(now) ? 'today' : 'earlier'} · full history powers Insights.</p>
         </Card>
       )}
+
+      <div>
+        <p className="mb-2 text-xs font-semibold tracking-widest text-ink-faint uppercase">Keep walking →</p>
+        <nav aria-label="Next and previous words" className="grid grid-cols-2 gap-2 pb-2">
+          <button
+            onClick={() => prevWord && navigate(`/word/${prevWord.id}`)}
+            disabled={!prevWord}
+            className="flex min-h-[64px] cursor-pointer flex-col items-start justify-center gap-0.5 rounded-2xl border-2 border-line-strong bg-paper px-4 py-2.5 text-left shadow-sm transition-calm hover:border-accent disabled:cursor-default disabled:opacity-40 disabled:hover:border-line-strong"
+          >
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-ink-soft"><Icon name="chevron-left" size={14} /> PREVIOUS</span>
+            <span className="font-display text-xl leading-tight font-medium">{prevWord?.word ?? '—'}</span>
+          </button>
+          <button
+            onClick={() => nextWord && navigate(`/word/${nextWord.id}`)}
+            disabled={!nextWord}
+            className="flex min-h-[64px] cursor-pointer flex-col items-end justify-center gap-0.5 rounded-2xl bg-accent px-4 py-2.5 text-right text-paper shadow-sm transition-calm hover:brightness-110 disabled:cursor-default disabled:bg-line disabled:text-ink-faint disabled:hover:brightness-100"
+          >
+            <span className="inline-flex items-center gap-1 text-xs font-semibold opacity-90">NEXT <Icon name="chevron-right" size={14} /></span>
+            <span className="font-display text-xl leading-tight font-medium">{nextWord?.word ?? '—'}</span>
+          </button>
+        </nav>
+      </div>
     </div>
   );
 }

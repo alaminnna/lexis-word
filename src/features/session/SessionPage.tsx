@@ -5,7 +5,7 @@ import { WORDS } from '../../data/words';
 import { buildSession } from '../../core/engine/session-builder';
 import { getSpeechAvailable } from '../../services/speech';
 import { progressSnapshot } from '../../store/progress';
-import { settingsSnapshot } from '../../store/settings';
+import { settingsSnapshot, useSettings } from '../../store/settings';
 import { useSessionPersist } from '../../store/session';
 import { todayInputs } from '../../store/selectors';
 import { SessionRunner } from './SessionRunner';
@@ -40,6 +40,7 @@ async function buildFresh(): Promise<SessionPlan> {
 export default function SessionPage() {
   const navigate = useNavigate();
   const clearSaved = useSessionPersist((s) => s.clear);
+  const displayName = useSettings((s) => s.displayName);
   const [entry, setEntry] = useState<Entry | null>(null);
   const [loading, setLoading] = useState(true);
   const startedRef = useRef(false);
@@ -117,7 +118,7 @@ export default function SessionPage() {
     const left = saved.plan.items.length - saved.index;
       return (
         <div className="mx-auto w-full max-w-xl py-8">
-          <h1 className="font-display text-3xl font-medium tracking-tight">Welcome back</h1>
+          <h1 className="font-display text-3xl font-medium tracking-tight">Welcome back{displayName ? `, ${displayName}` : ''}</h1>
           <p className="mt-2 text-lg text-ink-soft">
             Your last session was interrupted with {left} item{left === 1 ? '' : 's'} left.
             Everything you answered is already saved.
