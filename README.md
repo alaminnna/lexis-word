@@ -14,6 +14,10 @@ to learn 499 IELTS Academic words properly.
 
 Built for Bengali-speaking candidates, works for anyone. Fully offline.
 
+![Lexis Today page in dark mode on a laptop — daily plan with due reviews, resume button, and lab shortcuts](docs/device-shot.png)
+
+*Dark mode, Today page: due reviews first, one tap to begin. Light mode ships too.*
+
 ## What it does
 
 - **Today** — opens with a daily plan, not a blank screen. Due reviews first,
