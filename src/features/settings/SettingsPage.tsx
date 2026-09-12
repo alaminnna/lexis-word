@@ -152,7 +152,7 @@ function SoundHapticsSettings() {
             >
               Test vibration
             </Button>
-            <p className="text-xs text-ink-faint">Haptics pause automatically when your system requests reduced motion.</p>
+            <p className="text-xs text-ink-soft">Haptics pause automatically when your system requests reduced motion.</p>
           </div>
         )}
       </div>
@@ -278,8 +278,13 @@ function DictionaryStatus() {
       </p>
       <p className="text-sm text-ink-soft">
         Enrichment adds full definitions and IELTS examples on Word pages. It is never required to study.
-        Developers: set <code>VITE_DICT_PROXY=1</code> to route through the Vite dev proxy (see README).
       </p>
+      <details className="text-sm text-ink-soft">
+        <summary className="cursor-pointer font-medium text-ink">Developer setup</summary>
+        <p className="mt-1">
+          Set <code>VITE_DICT_PROXY=1</code> to route through the Vite dev proxy (see README).
+        </p>
+      </details>
       <div>
         <Button variant="secondary" onClick={() => void test()} loading={testing}>Test connection</Button>
       </div>
@@ -465,7 +470,7 @@ export default function SettingsPage() {
             placeholder="e.g. Arif"
             autoComplete="given-name"
             maxLength={40}
-            className="min-h-[44px] w-full rounded-lg border border-line-strong bg-paper px-3 placeholder:text-ink-faint focus:border-accent focus:outline-none"
+            className="min-h-[44px] w-full rounded-lg border border-line-strong bg-paper px-3 placeholder:text-ink-soft focus:border-accent focus:outline-none"
           />
         </div>
       </Card>
@@ -493,10 +498,10 @@ export default function SettingsPage() {
       </Card>
       <VoiceSettings />
       <SoundHapticsSettings />
-      <Card className="space-y-3">
+      <div className="rounded-xl border border-line bg-paper p-5" id="ai-feedback">
         <h2 className="font-display text-xl">AI Feedback</h2>
-        <AISettingsCard />
-      </Card>
+        <div className="mt-3"><AISettingsCard /></div>
+      </div>
       <Card className="space-y-3">
         <h2 className="font-display text-xl">Appearance</h2>
         <SegmentedControl

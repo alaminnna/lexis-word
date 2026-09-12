@@ -12,7 +12,7 @@ export function Banner({ tone = 'info', children, onDismiss, className = '' }: {
   return (
     <div
       role="status"
-      className={`flex items-start gap-3 rounded-lg border px-4 py-3 text-[15px] ${
+      className={`flex items-start gap-3 rounded-lg border px-4 py-3 text-[15px] transition-calm motion-safe:starting:opacity-0 motion-safe:starting:-translate-y-1 ${
         tone === 'warn' ? 'border-warn/30 bg-warn-soft text-ink' : 'border-line bg-paper-deep text-ink-soft'
       } ${className}`}
     >
@@ -22,7 +22,7 @@ export function Banner({ tone = 'info', children, onDismiss, className = '' }: {
         <button
           onClick={onDismiss}
           aria-label="Dismiss notice"
-          className="cursor-pointer rounded p-1 text-ink-faint hover:text-ink"
+          className="flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded text-ink-soft hover:text-ink"
         >
           <Icon name="x" size={16} />
         </button>

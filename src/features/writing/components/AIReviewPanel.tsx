@@ -53,7 +53,7 @@ export function AIReviewPanel({ availability, requested, busy, result, gradedBy,
           <Button variant="secondary" onClick={onRequest} loading={busy} disabled={requested && busy}>
             {requested ? 'Try AI feedback again' : 'Get AI feedback'}
           </Button>
-          <p className="mt-1 text-xs text-ink-faint">
+          <p className="mt-1 text-xs text-ink-soft">
             {availability.state === 'ready'
               ? `Via ${availability.source === 'user' ? 'your keys' : 'system keys'} · ${availability.model} · analysis only, your saved review stands.`
               : 'Reads but never changes your saved review.'}
@@ -83,7 +83,7 @@ function AIResult({ result, gradedBy }: { result: WritingFeedback; gradedBy?: st
   const passed = ROWS.filter((r) => result.scores[r.k]).length;
   return (
     <div className="mt-3 space-y-3" aria-live="polite">
-      {gradedBy && <p className="text-xs text-ink-faint">Graded with {gradedBy}.</p>}
+      {gradedBy && <p className="text-xs text-ink-soft">Graded with {gradedBy}.</p>}
       <p className="text-[15px]">
         <strong className="font-medium">Overall:</strong>{' '}
         {passed === 4
@@ -113,7 +113,7 @@ function AIResult({ result, gradedBy }: { result: WritingFeedback; gradedBy?: st
       </ul>
       {result.revision && (
         <div className="rounded-lg bg-paper-deep p-3">
-          <p className="text-sm font-medium text-ink-faint">Suggested revision</p>
+          <p className="text-sm font-medium text-ink-soft">Suggested revision</p>
           <p className="mt-0.5 text-[15px]">“{result.revision}”</p>
           {result.why && <p className="mt-1 text-sm text-ink-soft"><strong className="font-medium">Why:</strong> {result.why}</p>}
         </div>
@@ -121,7 +121,7 @@ function AIResult({ result, gradedBy }: { result: WritingFeedback; gradedBy?: st
       <blockquote className="border-l-2 border-accent pl-3 text-[15px] italic">
         “{result.comment}”
       </blockquote>
-      <p className="flex items-center gap-1.5 text-xs text-ink-faint">
+      <p className="flex items-center gap-1.5 text-xs text-ink-soft">
         <Icon name="info" size={14} /> AI feedback is a second perspective, not the final authority.
       </p>
     </div>

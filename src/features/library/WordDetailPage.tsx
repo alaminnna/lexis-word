@@ -82,8 +82,10 @@ export default function WordDetailPage() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
+      // Never hijack arrows from fields, modifier combos, or assistive browse mode.
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
       if (e.key === 'ArrowLeft' && prevWord) navigate(`/word/${prevWord.id}`);
       else if (e.key === 'ArrowRight' && nextWord) navigate(`/word/${nextWord.id}`);
     };
@@ -129,9 +131,11 @@ export default function WordDetailPage() {
     const { introducedToday, daysSinceActive, rolling } = todayInputs(full, Date.now());
     const plan = buildSession({
       words: [word], progress: full.words, confusion: full.confusion, settings,
-      seed: settings.seed + word.rank, now: Date.now(), introducedToday,
-      daysSinceActive, rollingSuccess: rolling, speechAvailable: true,
+      seed: settings.seed + word.rank + (Date.now() % 997), now: Date.now(), introducedToday,
+      daysSinceActive, rollingSuccess: rolling,
+      speechAvailable: typeof window !== 'undefined' && 'speechSynthesis' in window,
     });
+    if (plan.items.length === 0) return;
     plan.id = `prac_${word.id}_${Date.now().toString(36)}`;
     plan.meta = { kind: 'practice', wordId: word.id };
     // A brand-new word starts with its Meet card inside the focused session.
@@ -163,7 +167,7 @@ export default function WordDetailPage() {
             disabled={!nextWord}
             aria-label={nextWord ? `Next word: ${nextWord.word}` : 'No next word'}
             title={nextWord ? `${nextWord.word} →` : 'Last word'}
-            className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-accent text-paper shadow-sm transition-calm hover:brightness-110 disabled:cursor-default disabled:bg-line disabled:text-ink-faint disabled:hover:brightness-100"
+            className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-accent text-paper shadow-sm transition-calm hover:brightness-110 disabled:cursor-default disabled:bg-line disabled:text-ink-soft disabled:hover:brightness-100"
           >
             <Icon name="chevron-right" size={18} />
           </button>
@@ -171,7 +175,7 @@ export default function WordDetailPage() {
       </div>
 
       <WordHero word={word} recallStrength={progress?.dimensions.recall.strength ?? 0} large autoPlay />
-      <p className="text-sm text-ink-faint">
+      <p className="text-sm text-ink-soft">
         {wordStageName(word.stage)} · word {word.rank} of {WORDS.length} · Topic: {topicOf(word)}
       </p>
 
@@ -211,16 +215,16 @@ export default function WordDetailPage() {
             )}
             {entry.defs.map((d, i) => (
               <div key={i}>
-                {d.forms.length > 0 && <p className="text-sm text-ink-faint">Family: {d.forms.join(' · ')}</p>}
+                {d.forms.length > 0 && <p className="text-sm text-ink-soft">Family: {d.forms.join(' · ')}</p>}
                 {d.definitions.map((def, j) => (
                   <div key={j} className="mt-2">
                     <p>
-                      {def.pos && <span className="mr-2 text-sm tracking-wide text-ink-faint uppercase">{def.pos}</span>}
+                      {def.pos && <span className="mr-2 text-sm tracking-wide text-ink-soft uppercase">{def.pos}</span>}
                       {def.def}
                     </p>
                     {def.examples.slice(0, 2).map((ex, k) => (
                       <p key={k} className="mt-1 border-l-2 border-accent pl-3 text-[15px] text-ink-soft">
-                        “{ex.sentence}”{ex.source && <span className="block text-xs text-ink-faint">{ex.source}</span>}
+                        “{ex.sentence}”{ex.source && <span className="block text-xs text-ink-soft">{ex.source}</span>}
                       </p>
                     ))}
                   </div>
@@ -234,12 +238,12 @@ export default function WordDetailPage() {
       <Card>
         <h2 className="mb-2 font-display text-xl">In context</h2>
         <p className="text-[15px] leading-relaxed">{highlightWord(word.sentence, word.word, word.forms ?? [])}</p>
-        <p className="mt-1 text-xs text-ink-faint">Study example</p>
+        <p className="mt-1 text-xs text-ink-soft">Study example</p>
         {entry && entry.examples.length > 0 && (
           <div className="mt-3 space-y-2">
             {entry.examples.slice(0, 3).map((ex, k) => (
               <p key={k} className="border-l-2 border-line-strong pl-3 text-[15px] text-ink-soft">
-                “{ex.sentence}”{ex.source && <span className="block text-xs text-ink-faint">{ex.source}</span>}
+                “{ex.sentence}”{ex.source && <span className="block text-xs text-ink-soft">{ex.source}</span>}
               </p>
             ))}
           </div>
@@ -261,9 +265,9 @@ export default function WordDetailPage() {
                 <div key={d}>
                   <div className="flex items-baseline justify-between text-sm">
                     <span className="font-medium capitalize">{d}</span>
-                    <span className="text-ink-faint">
+                    <span className="text-ink-soft">
                       {Math.round(st.strength)}/100 · {st.attempts === 0 ? 'not tried' : `last ${relTime(st.lastReviewedAt, now)} · ${dueText(st.nextDueAt, now)}`}
-                      {r.atRisk && st.attempts > 0 ? ' · fading' : ''}
+                      {r.atRisk && st.attempts > 0 ? ' · needs review' : ''}
                     </span>
                   </div>
                   <ProgressBar value={st.strength} label={`${d} strength`} className="[&>div:first-child]:hidden" />
@@ -287,7 +291,7 @@ export default function WordDetailPage() {
                   <Link to={`/word/${otherId}`} className="text-accent-deep underline dark:text-accent">
                     {other.word}
                   </Link>{' '}
-                  <span className="text-sm text-ink-faint">
+                  <span className="text-sm text-ink-soft">
                     — mixed up {e.weight >= 2 ? 'often; a drill is scheduled' : 'before'}{' '}
                     (<Link to="/labs/discrimination" className="underline">open trainer</Link>)
                   </span>
@@ -300,7 +304,7 @@ export default function WordDetailPage() {
 
       {errorEntries.length > 0 && (
         <Card>
-          <h2 className="mb-2 font-display text-xl">Your spelling slips</h2>
+          <h2 className="mb-2 font-display text-xl">Spelling patterns</h2>
           <ul className="list-disc pl-5 text-[15px] text-ink-soft">
             {errorEntries.map(([kind, n]) => (
               <li key={kind}>{SPELLING_ERROR_LABELS[kind]} — {n} time{n === 1 ? '' : 's'}</li>
@@ -318,18 +322,19 @@ export default function WordDetailPage() {
           <ul className="space-y-1 text-sm text-ink-soft">
             {history.map((e) => (
               <li key={e.id} className="flex items-center gap-2">
+                <span className="sr-only">{e.correct ? 'Correct' : 'Incorrect'}:</span>
                 <Icon name={e.correct ? 'check' : 'x'} size={15} className={e.correct ? 'text-good' : 'text-bad'} />
                 {e.activity} · {e.dimension} · {new Date(e.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                 {e.detail?.typed ? ` · “${e.detail.typed}”` : ''}
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-xs text-ink-faint">Logged {dayKey(history[0]!.timestamp) === dayKey(now) ? 'today' : 'earlier'} · full history powers Insights.</p>
+          <p className="mt-2 text-xs text-ink-soft">Logged {dayKey(history[0]!.timestamp) === dayKey(now) ? 'today' : 'earlier'} · full history powers Insights.</p>
         </Card>
       )}
 
       <div>
-        <p className="mb-2 text-xs font-semibold tracking-widest text-ink-faint uppercase">Keep walking →</p>
+        <p className="mb-2 text-xs font-semibold tracking-widest text-ink-soft uppercase">Keep walking →</p>
         <nav aria-label="Next and previous words" className="grid grid-cols-2 gap-2 pb-2">
           <button
             onClick={() => prevWord && navigate(`/word/${prevWord.id}`)}
@@ -342,7 +347,7 @@ export default function WordDetailPage() {
           <button
             onClick={() => nextWord && navigate(`/word/${nextWord.id}`)}
             disabled={!nextWord}
-            className="flex min-h-[64px] cursor-pointer flex-col items-end justify-center gap-0.5 rounded-2xl bg-accent px-4 py-2.5 text-right text-paper shadow-sm transition-calm hover:brightness-110 disabled:cursor-default disabled:bg-line disabled:text-ink-faint disabled:hover:brightness-100"
+            className="flex min-h-[64px] cursor-pointer flex-col items-end justify-center gap-0.5 rounded-2xl bg-accent px-4 py-2.5 text-right text-paper shadow-sm transition-calm hover:brightness-110 disabled:cursor-default disabled:bg-line disabled:text-ink-soft disabled:hover:brightness-100"
           >
             <span className="inline-flex items-center gap-1 text-xs font-semibold opacity-90">NEXT <Icon name="chevron-right" size={14} /></span>
             <span className="font-display text-xl leading-tight font-medium">{nextWord?.word ?? '—'}</span>

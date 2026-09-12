@@ -31,12 +31,14 @@ export default function ReviewPage() {
     const full = progressSnapshot();
     const settings = settingsSnapshot();
     const { introducedToday, daysSinceActive, rolling } = todayInputs(full, Date.now());
+    const speechAvailable = typeof window !== 'undefined' && 'speechSynthesis' in window;
     const plan = buildSession({
       words: subset, progress: full.words, confusion: full.confusion, settings,
-      seed: settings.seed + Math.floor(Date.now() / 86_400_000) + filter.length * 97,
+      seed: settings.seed + Math.floor(Date.now() / 86_400_000) + filter.length * 97 + (Date.now() % 997),
       now: Date.now(), introducedToday, daysSinceActive, rollingSuccess: rolling,
-      speechAvailable: true, // SessionPage replans if actually voiceless
+      speechAvailable,
     });
+    if (plan.items.length === 0) return;
     plan.id = `rev_${filter}_${Date.now().toString(36)}`;
     plan.meta = { kind: 'review', filter };
     launchPlan(plan);
@@ -100,8 +102,8 @@ export default function ReviewPage() {
         ))}
       </div>
       {dueIds.length > 0 && (
-        <p className="mt-4 text-sm text-ink-faint">
-          Due now include: {dueIds.slice(0, 8).map((id) => WORD_MAP[id]?.word ?? id).join(' · ')}
+        <p className="mt-4 text-sm text-ink-soft">
+          Due now includes: {dueIds.slice(0, 8).map((id) => WORD_MAP[id]?.word ?? id).join(' · ')}
           {dueIds.length > 8 ? ` · +${dueIds.length - 8} more` : ''} — <Link to="/library" className="underline">browse all</Link>
         </p>
       )}

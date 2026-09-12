@@ -235,6 +235,17 @@ export default function WritingPage() {
     return { state: 'ready', source: r.source, model: displayModelFor(cfg) };
   };
 
+  const taskSwitchDirty = text.trim().length > 0 || reflection.trim().length > 0 || RUBRIC.some((r) => rubric[r.k]);
+
+  const switchTask = (t: WritingTaskKind): void => {
+    if (t === task) return;
+    if (taskSwitchDirty && !window.confirm('Switching task resets your draft, rubric, and reflection for this word. Switch anyway?')) {
+      return;
+    }
+    if (!word) return;
+    startPractice(word, t);
+  };
+
   if (phase === 'landing' || !word) {
     return (
       <StudioLanding
@@ -253,13 +264,13 @@ export default function WritingPage() {
   const recallStrength = words[word.id]?.dimensions.recall.strength ?? 0;
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-5">
+    <div className="-mx-4 w-full max-w-6xl space-y-5 md:-mx-8">
       <header>
         <button
           onClick={backToStudio}
           className="inline-flex min-h-[44px] cursor-pointer items-center gap-1 text-sm text-ink-soft transition-calm hover:text-ink"
         >
-          <Icon name="chevron-left" size={16} /> Writing Studio <span className="text-ink-faint">/ Vocabulary Production</span>
+          <Icon name="chevron-left" size={16} /> Writing Studio <span className="text-ink-soft">/ Vocabulary Production</span>
         </button>
         <div className="mt-1 flex flex-wrap items-end justify-between gap-2">
           <div>
@@ -276,7 +287,7 @@ export default function WritingPage() {
             return (
               <li key={label} className="flex items-center gap-2" aria-current={current ? 'step' : undefined}>
                 {i > 0 && <span aria-hidden className="h-px w-6 bg-line-strong" />}
-                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${done ? 'bg-accent text-paper' : current ? 'border-2 border-accent text-accent-deep dark:text-accent' : 'border border-line-strong text-ink-faint'}`}>
+                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${done ? 'bg-accent text-paper' : current ? 'border-2 border-accent text-accent-deep dark:text-accent' : 'border border-line-strong text-ink-soft'}`}>
                   {done ? '✓' : i + 1}
                 </span>
                 <span className={current ? 'font-medium' : 'text-ink-soft'}>{label}</span>
@@ -290,7 +301,7 @@ export default function WritingPage() {
 
       {phase === 'write' && (
         <>
-          <TaskSelector value={task} onChange={(t) => startPractice(word, t)} />
+          <TaskSelector value={task} onChange={switchTask} />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-5">
             <div className="md:col-span-3">
               {task === 'frame' ? (
@@ -345,10 +356,10 @@ export default function WritingPage() {
                 </ul>
                 {word.forms && word.forms.length > 0 && (
                   <p className="mt-3 text-sm text-ink-soft">
-                    <span className="text-ink-faint">Family: </span>{word.forms.join(' · ')}
+                    <span className="text-ink-soft">Family: </span>{word.forms.join(' · ')}
                   </p>
                 )}
-                <p className="mt-3 text-sm text-ink-faint">
+                <p className="mt-3 text-sm text-ink-soft">
                   {task === 'frame' && 'Pick the partner that sounds most natural — hear the sentence in your head.'}
                   {task === 'transform' && 'Keep the meaning. Reach for academic verbs and noun phrases.'}
                   {task === 'free' && 'One clear idea first; polish second.'}
@@ -418,8 +429,9 @@ export default function WritingPage() {
     const r = resolveAIProvider(cfg);
     return (
       <p className="mt-1 text-sm text-ink-soft">
-        Grading with: {r.source === 'none' ? 'self-review' : 'self-review + AI on save'} ·{' '}
-        <span className="text-ink-faint">one writing event, never doubled.</span>
+        {r.source === 'none'
+          ? 'Your self-review is recorded when you save.'
+          : 'Your self-review is recorded; AI feedback is attached when you save.'}
       </p>
     );
   }
@@ -429,7 +441,11 @@ export default function WritingPage() {
       ? `AI available · ${availability.model}`
       : availability.state === 'failed' ? 'AI failed' : 'AI off';
     return (
-      <p className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${availability.state === 'ready' ? 'bg-good-soft text-good' : 'bg-paper-deep text-ink-soft'}`} aria-live="polite">
+      <p
+        className={`max-w-full shrink-0 truncate rounded-full px-2.5 py-1 text-xs font-medium ${availability.state === 'ready' ? 'bg-good-soft text-good' : 'bg-paper-deep text-ink-soft'}`}
+        aria-live="polite"
+        title={label}
+      >
         {label}
       </p>
     );

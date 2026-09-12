@@ -11,7 +11,7 @@ const PROFILE_LINKS: { label: string; href: string; hint: string }[] = [
   { label: 'YouTube', href: 'https://www.youtube.com/@alaminnna', hint: '@alaminnna' },
   { label: 'Instagram', href: 'https://www.instagram.com/alaminnna', hint: '@alaminnna' },
   { label: 'Threads', href: 'https://www.threads.net/@alaminnna', hint: '@alaminnna' },
-  { label: 'TikTok', href: 'https://www.tiktok.com/@alaminnnna', hint: '@alaminnnna' },
+  { label: 'TikTok', href: 'https://www.tiktok.com/@alaminnna', hint: '@alaminnna' },
   { label: 'Facebook Page', href: 'https://www.facebook.com/profile.php?id=61592578435860', hint: 'Follow' },
   { label: 'Medium', href: 'https://medium.com/@Alaminnna', hint: '@Alaminnna' },
   { label: 'DEV', href: 'https://dev.to/alaminnna', hint: '@alaminnna' },
@@ -19,7 +19,7 @@ const PROFILE_LINKS: { label: string; href: string; hint: string }[] = [
   { label: 'Product Hunt', href: 'https://www.producthunt.com/@alaminnna', hint: '@alaminnna' },
   { label: 'Stack Overflow', href: 'https://stackoverflow.com/users/33006113/alaminnna', hint: '@alaminnna' },
   { label: 'npm', href: 'https://www.npmjs.com/~alaminnna', hint: '~alaminnna' },
-  { label: 'Pinterest', href: 'https://www.pinterest.com/alaminnnnna/', hint: '@alaminnnnna' },
+  { label: 'Pinterest', href: 'https://www.pinterest.com/alaminnna/', hint: '@alaminnna' },
   { label: 'Linktree', href: 'https://linktr.ee/alaminnna', hint: 'All links' },
 ];
 
@@ -78,7 +78,7 @@ function DeveloperCard() {
                 'radial-gradient(420px circle at var(--mx, 50%) var(--my, 20%), rgb(45 212 191 / 0.14), transparent 65%)',
             }}
           />
-          <p className="relative text-xs font-medium tracking-wide text-ink-faint uppercase">Developer</p>
+          <p className="relative text-xs font-medium tracking-wide text-ink-soft uppercase">Developer</p>
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start">
             {/* Photo pops in Z for depth on desktop; full-width banner on phone */}
             <div className="w-full shrink-0 overflow-hidden rounded-2xl border border-line-strong bg-paper-deep shadow-sm sm:w-auto sm:[transform:translateZ(36px)]">
@@ -89,6 +89,7 @@ function DeveloperCard() {
                 height={448}
                 loading="lazy"
                 decoding="async"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 className="h-56 w-full object-cover object-[60%_25%] transition-calm hover:scale-105 sm:h-52 sm:w-44"
               />
             </div>
@@ -101,15 +102,16 @@ function DeveloperCard() {
                 I build in the open — small tools, honest progress, no hype.
                 Lexis is one of those builds: a calm place to learn IELTS words properly.
               </p>
-              <a
-                href="https://alaminnna.ami.bd"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex min-h-[44px] items-center gap-2 font-medium text-accent-deep underline transition-calm hover:gap-3 dark:text-accent"
-              >
-                <Icon name="globe" size={18} />
-                alaminnna.ami.bd
-              </a>
+                 <a
+                   href="https://alaminnna.ami.bd"
+                   target="_blank"
+                   rel="noreferrer noopener"
+                   aria-label="alaminnna.ami.bd (opens in new tab)"
+                   className="inline-flex min-h-[44px] items-center gap-2 font-medium text-accent-deep underline transition-calm hover:gap-3 dark:text-accent"
+                 >
+                   <Icon name="globe" size={18} />
+                   alaminnna.ami.bd
+                 </a>
             </div>
           </div>
           <div className="relative flex flex-wrap gap-2">
@@ -123,7 +125,7 @@ function DeveloperCard() {
               </span>
             ))}
           </div>
-          <p className="relative hidden text-xs text-ink-faint [@media(pointer:fine)]:block">
+          <p className="relative hidden text-xs text-ink-soft [@media(pointer:fine)]:block">
             Move your pointer over this card — it follows you.
           </p>
         </Card>
@@ -182,19 +184,20 @@ export default function AboutPage() {
                 className="animate-rise"
                 style={{ animationDelay: `${280 + Math.min(i, 8) * 50}ms` }}
               >
-                <a
-                  href={link.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex min-h-[44px] items-center justify-between gap-3 rounded-lg border border-line px-3 py-2 transition-calm hover:-translate-y-0.5 hover:border-accent hover:shadow-sm"
-                >
-                  <span className="font-medium">{link.label}</span>
-                  <span className="truncate text-sm text-ink-faint">{link.hint}</span>
-                </a>
+               <a
+                   href={link.href}
+                   target="_blank"
+                   rel="noreferrer noopener"
+                   aria-label={`${link.label} (${link.hint}) — opens in new tab`}
+                   className="flex min-h-[44px] items-center justify-between gap-3 rounded-lg border border-line px-3 py-2 transition-calm hover:-translate-y-0.5 hover:border-accent hover:shadow-sm"
+                 >
+                   <span className="font-medium">{link.label}</span>
+                   <span className="truncate text-sm text-ink-soft">{link.hint}</span>
+                 </a>
               </li>
             ))}
           </ul>
-          <p className="text-xs text-ink-faint">Still working on it — more coming.</p>
+          <p className="text-xs text-ink-soft">Still working on it — more coming.</p>
         </Card>
       </div>
     </div>

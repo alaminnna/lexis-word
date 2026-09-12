@@ -73,7 +73,7 @@ function ChunkActivity({ word, onDone }: { word: WordRecord; onDone: (correct: b
         Rebuild the <strong>{word.word.length}-letter</strong> word from its chunks, in order.
       </p>
       <div className="mb-3 flex min-h-[68px] flex-wrap gap-2 rounded-xl border-2 border-line bg-paper-deep/50 p-3 font-display text-2xl" aria-label="Your assembly">
-        {picked.length === 0 && <span className="text-base text-ink-faint">Tap chunks below…</span>}
+        {picked.length === 0 && <span className="text-base text-ink-soft">Tap chunks below…</span>}
         {picked.map((bi, i) => (
           <button key={i} onClick={() => result === null && setPicked(picked.filter((_, j) => j !== i))}
             aria-label={`Remove ${chunks[bank[bi]!]}`}
@@ -267,7 +267,7 @@ export default function SpellingPage() {
           );
         })}
       </div>
-      <p className="mb-4 px-1 text-[13px] text-ink-faint">
+      <p className="mb-4 px-1 text-[13px] text-ink-soft">
         {meta.desc} · auto-matched{word ? <span className="tabular-nums"> (strength {currentStrength})</span> : ''} · switch anytime
       </p>
 
@@ -276,7 +276,7 @@ export default function SpellingPage() {
         <Card key={lab.roundKey} className="p-5 sm:p-6">
           <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="font-display text-2xl font-medium tracking-tight text-balance">{meta.title}</h2>
-            <p className="shrink-0 text-[13px] text-ink-faint tabular-nums">
+            <p className="shrink-0 text-[13px] text-ink-soft tabular-nums">
               {word.word.length} letters · strength {currentStrength}
             </p>
           </div>
@@ -301,7 +301,7 @@ export default function SpellingPage() {
           </div>
           {lab.phase === 'feedback' && (
             <div className="sticky bottom-[76px] z-20 mt-5 md:static">
-              <Button className="w-full sm:w-auto" onClick={() => nextWord(activeStep)} autoFocus>Next</Button>
+              <Button className="w-full sm:w-auto" onClick={() => nextWord(activeStep)}>Next</Button>
             </div>
           )}
         </Card>
@@ -310,7 +310,7 @@ export default function SpellingPage() {
       {/* Quiet supporting info — same content on PC and phone */}
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Card className="p-4">
-          <h2 className="mb-2 text-[15px] font-medium">Up next <span className="font-normal text-ink-faint">· weakest first</span></h2>
+          <h2 className="mb-2 text-[15px] font-medium">Up next <span className="font-normal text-ink-soft">· weakest first</span></h2>
           <ul className="space-y-0.5">
             {pool.slice(0, 4).map((w) => {
               const s = Math.round(allProfiles[w.id]?.dimensions.spelling.strength ?? 0);
@@ -325,7 +325,7 @@ export default function SpellingPage() {
                     }`}
                   >
                     <span className="truncate">{w.word}</span>
-                    <span className="h-1 w-16 shrink-0 overflow-hidden rounded-full bg-paper-deep" aria-hidden>
+                    <span className="h-1 w-16 shrink-0 overflow-hidden rounded-full bg-paper-deep" aria-hidden="true">
                       <span className="block h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.max(6, s))}%` }} />
                     </span>
                   </button>
@@ -347,11 +347,11 @@ export default function SpellingPage() {
                 <li key={p.kind} className="flex items-baseline justify-between gap-2">
                   <span className="min-w-0">
                     <strong className="font-medium">{SPELLING_ERROR_LABELS[p.kind]}</strong>
-                    <span className="block truncate text-[13px] text-ink-faint">
+                    <span className="block truncate text-[13px] text-ink-soft">
                       {p.words.slice(0, 3).map((id) => WORDS.find((w) => w.id === id)?.word ?? id).join(', ')}
                     </span>
                   </span>
-                  <span className="shrink-0 text-[13px] text-ink-faint tabular-nums">{p.count}</span>
+                  <span className="shrink-0 text-[13px] text-ink-soft tabular-nums">{p.count}</span>
                 </li>
               ))}
             </ul>

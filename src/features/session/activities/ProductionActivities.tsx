@@ -38,8 +38,11 @@ export function DictationActivity({ item, word, phase, onSubmit, noteReplay, wor
   useEffect(() => {
     if (phase !== 'stimulus') return;
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Enter' && value.trim()) submit();
+      const t = e.target as HTMLElement | null;
+      const inField = !!t?.closest?.('input, textarea, select, [contenteditable="true"]');
+      if (e.key === 'Enter' && value.trim() && !inField) submit();
       else if (e.key === ' ') {
+        if (inField) return;
         e.preventDefault();
         void replay();
       }
@@ -79,7 +82,7 @@ export function DictationActivity({ item, word, phase, onSubmit, noteReplay, wor
               onClick={() => update({ speechRate: r })}
               aria-pressed={rate === r}
               className={`min-h-[44px] cursor-pointer rounded-lg px-3 text-sm transition-calm ${
-                rate === r ? 'bg-accent-soft font-medium text-accent-deep dark:text-accent' : 'text-ink-faint hover:text-ink'
+                rate === r ? 'bg-accent-soft font-medium text-accent-deep dark:text-accent' : 'text-ink-soft hover:text-ink'
               }`}
             >
               {r}×
@@ -95,13 +98,13 @@ export function DictationActivity({ item, word, phase, onSubmit, noteReplay, wor
         disabled={phase !== 'stimulus'}
         onChange={(e) => setValue(e.target.value)}
         placeholder="Type the word you hear…"
-        className="min-h-[52px] w-full rounded-xl border-2 border-line bg-paper px-4 py-3 font-display text-2xl transition-calm placeholder:text-ink-faint focus:border-accent focus:outline-none disabled:opacity-70"
+        className="min-h-[52px] w-full rounded-xl border-2 border-line bg-paper px-4 py-3 font-display text-2xl transition-calm placeholder:text-ink-soft focus:border-accent focus:outline-none disabled:opacity-70"
         {...INPUT_HYGIENE}
       />
       <button
         onClick={submit}
         disabled={phase !== 'stimulus' || !value.trim()}
-        className="mt-3 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg bg-accent px-5 py-2.5 font-medium text-paper transition-calm hover:brightness-110 disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-faint"
+        className="mt-3 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg bg-accent px-5 py-2.5 font-medium text-paper transition-calm hover:brightness-110 disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-soft"
       >
         Check
       </button>
@@ -151,16 +154,16 @@ export function ProductionActivity({ item, word, phase, onSubmit }: ActivityProp
         autoFocus
         placeholder="Write here…"
         aria-describedby="production-hint"
-        className="min-h-[96px] w-full rounded-xl border-2 border-line bg-paper px-4 py-3 text-lg leading-relaxed transition-calm placeholder:text-ink-faint focus:border-accent focus:outline-none disabled:opacity-70"
+        className="min-h-[96px] w-full rounded-xl border-2 border-line bg-paper px-4 py-3 text-lg leading-relaxed transition-calm placeholder:text-ink-soft focus:border-accent focus:outline-none disabled:opacity-70"
         {...INPUT_HYGIENE}
       />
-      <p id="production-hint" className="mt-1 text-sm text-ink-faint">
+      <p id="production-hint" className="mt-1 text-sm text-ink-soft">
         Aim for a sentence you could put in a Task 2 essay. {words} word{words === 1 ? '' : 's'} so far.
       </p>
       <button
         onClick={submit}
         disabled={phase !== 'stimulus' || words < 3}
-        className="mt-3 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg bg-accent px-5 py-2.5 font-medium text-paper transition-calm hover:brightness-110 disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-faint"
+        className="mt-3 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg bg-accent px-5 py-2.5 font-medium text-paper transition-calm hover:brightness-110 disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-soft"
       >
         Submit
       </button>

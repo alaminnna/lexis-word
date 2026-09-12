@@ -23,7 +23,7 @@ async function buildFresh(): Promise<SessionPlan> {
   const settings = settingsSnapshot();
   const { introducedToday, daysSinceActive, rolling } = todayInputs(snap, Date.now());
   const speech = await getSpeechAvailable();
-  const seed = settings.seed + Math.floor(Date.now() / 86_400_000);
+  const seed = settings.seed + Math.floor(Date.now() / 86_400_000) + (Date.now() % 997);
   return buildSession({
     words: WORDS, progress: snap.words, confusion: snap.confusion, settings,
     seed, now: Date.now(), introducedToday, daysSinceActive,
@@ -54,8 +54,20 @@ export default function SessionPage() {
     const launch = store.launch;
     if (launch && launch.items.length > 0) {
       store.clearLaunch();
-      setEntry({ kind: 'plan', plan: launch, startIndex: 0, replanned: false });
-      setLoading(false);
+      // Launches (review/lab/word practice) may have been built assuming voice.
+      // Replan the same way resume does when voice is gone.
+      void getSpeechAvailable().then((speech) => {
+        const hasListening = launch.items.some((i) => i.dimension === 'listening');
+        if (hasListening && !speech) {
+          buildFresh()
+            .then((plan) => applyPlan(plan, { replanned: true }))
+            .catch(() => setEntry({ kind: 'empty' }))
+            .finally(() => setLoading(false));
+        } else {
+          setEntry({ kind: 'plan', plan: launch, startIndex: 0, replanned: false });
+          setLoading(false);
+        }
+      });
       return;
     }
     const saved = store.saved;

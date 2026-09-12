@@ -197,7 +197,7 @@ export default function ListeningPage() {
 
       {item && word && lab.activityProps && (
         <Card key={lab.roundKey}>
-          <p className="mb-1 text-sm text-ink-faint">{MODES.find((m) => m.v === mode)?.d}</p>
+          <p className="mb-1 text-sm text-ink-soft">{MODES.find((m) => m.v === mode)?.d}</p>
           {mode === 'read' ? (
             <ReadMode word={word} lab={lab} readDone={readDone} setReadDone={setReadDone} next={next} />
           ) : mode === 'dictation' && fullSentence ? (
@@ -241,7 +241,7 @@ function ReadMode({ word, lab, readDone, setReadDone, next }: {
         <Button variant="secondary" onClick={() => {
           lab.noteReplay();
           void speak(word.sentence);
-        }}>
+        }} aria-label="Listen while reading aloud">
           {speaking ? 'Playing…' : 'Listen while reading'}
         </Button>
         {!readDone ? (
@@ -250,7 +250,7 @@ function ReadMode({ word, lab, readDone, setReadDone, next }: {
             if (lab.activityProps) labSubmitListened(lab);
             setReadDone(true);
           }}>
-            Got it
+            Got it <span className="ml-1 rounded bg-accent-soft px-1.5 py-0.5 text-[11px] text-accent-deep">hinted</span>
           </Button>
         ) : (
           <Button onClick={next}>Next word</Button>

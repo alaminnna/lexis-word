@@ -65,7 +65,7 @@ export function CompareEvaluatePanel({ word, text, entry, rubric, onRubric, refl
             {examples.map((ex, i) => (
               <li key={i} className="border-l-2 border-line-strong pl-3 text-[15px] text-ink-soft">
                 {highlightWord(ex.sentence, word.word, word.forms ?? [])}
-                {ex.source && <span className="block text-xs text-ink-faint">{ex.source}</span>}
+                {ex.source && <span className="block text-xs text-ink-soft">{ex.source}</span>}
               </li>
             ))}
           </ul>
@@ -73,7 +73,7 @@ export function CompareEvaluatePanel({ word, text, entry, rubric, onRubric, refl
         {(entry === null || (entry && examples.length === 0)) && (
           <p className="mt-2 border-l-2 border-line-strong pl-3 text-[15px] text-ink-soft">
             {highlightWord(word.sentence, word.word, word.forms ?? [])}
-            <span className="block text-xs text-ink-faint">Study example</span>
+            <span className="block text-xs text-ink-soft">Study example</span>
           </p>
         )}
       </section>
@@ -84,7 +84,7 @@ export function CompareEvaluatePanel({ word, text, entry, rubric, onRubric, refl
             <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full border border-line-strong align-middle text-[11px] font-bold text-ink-soft" aria-hidden>3</span>
             How well did you use the word?
           </h3>
-          <p className="text-sm text-ink-faint" aria-live="polite">{judgedCount} of 4 judged</p>
+          <p className="text-sm text-ink-soft" aria-live="polite">{judgedCount} of 4 judged</p>
         </div>
         <p className="mt-0.5 text-[15px] text-ink-soft">Compare your sentence with authentic usage before judging it.</p>
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2" role="group" aria-label="Self evaluation">
@@ -98,14 +98,14 @@ export function CompareEvaluatePanel({ word, text, entry, rubric, onRubric, refl
                   <button
                     onClick={() => judge(r.k, true)}
                     aria-pressed={decided && rubric[r.k]}
-                    className={`min-h-[40px] flex-1 cursor-pointer rounded-lg border text-sm transition-calm ${decided && rubric[r.k] ? 'border-good bg-good-soft font-medium text-good' : 'border-line text-ink-soft hover:border-line-strong'}`}
+                    className={`min-h-[44px] flex-1 cursor-pointer rounded-lg border text-sm transition-calm ${decided && rubric[r.k] ? 'border-good bg-good-soft font-medium text-good' : 'border-line text-ink-soft hover:border-line-strong'}`}
                   >
                     Yes
                   </button>
                   <button
                     onClick={() => judge(r.k, false)}
                     aria-pressed={decided && !rubric[r.k]}
-                    className={`min-h-[40px] flex-1 cursor-pointer rounded-lg border text-sm transition-calm ${decided && !rubric[r.k] ? 'border-bad bg-bad-soft font-medium text-bad' : 'border-line text-ink-soft hover:border-line-strong'}`}
+                    className={`min-h-[44px] flex-1 cursor-pointer rounded-lg border text-sm transition-calm ${decided && !rubric[r.k] ? 'border-bad bg-bad-soft font-medium text-bad' : 'border-line text-ink-soft hover:border-line-strong'}`}
                   >
                     No
                   </button>
@@ -114,13 +114,13 @@ export function CompareEvaluatePanel({ word, text, entry, rubric, onRubric, refl
             );
           })}
         </div>
-        <p className="mt-2 text-sm text-ink-faint">All four “Yes” counts as a full self-review.</p>
+        <p className="mt-2 text-sm text-ink-soft">All four “Yes” counts as a full self-review.</p>
       </section>
 
       <section aria-labelledby="ce-reflection">
         <h3 id="ce-reflection" className="font-display text-xl">
           <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full border border-line-strong align-middle text-[11px] font-bold text-ink-soft" aria-hidden>4</span>
-          Your reflection <span className="font-sans text-sm font-normal text-ink-faint">(optional)</span>
+          Your reflection <span className="font-sans text-sm font-normal text-ink-soft">(optional)</span>
         </h3>
         <label htmlFor="ws-reflection" className="sr-only">What would you improve in this sentence?</label>
         <textarea
@@ -129,12 +129,13 @@ export function CompareEvaluatePanel({ word, text, entry, rubric, onRubric, refl
           onChange={(e) => onReflection(e.target.value.slice(0, 500))}
           rows={2}
           placeholder="What would you improve in this sentence?"
-          className="mt-2 min-h-[64px] w-full rounded-xl border border-line bg-paper px-4 py-2.5 text-[16px] transition-calm placeholder:text-ink-faint focus:border-accent focus:outline-none"
+          className="mt-2 min-h-[64px] w-full rounded-xl border border-line bg-paper px-4 py-2.5 text-[16px] transition-calm placeholder:text-ink-soft focus:border-accent focus:outline-none"
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck={false}
           autoComplete="off"
         />
+        <p className="mt-1 text-xs text-ink-soft" aria-live="polite">{reflection.length} / 500</p>
       </section>
 
       <div>

@@ -117,20 +117,55 @@ export function migrateProgress(data: unknown): PersistedProgress {
   const base = emptyProgress();
   const merged: PersistedProgress = {
     ...base,
-    ...(d as Partial<PersistedProgress>),
     version: PROGRESS_VERSION,
+    // Allow-list known fields only — unknown/malformed extras must not poison the store.
+    words: {},
+    confusion: [],
+    daily: {},
+    events: [],
+    introducedToday: { date: '', wordIds: [] },
+    onboardingDone: false,
+    firstExposure: {},
   };
+  if (typeof d.onboardingDone === 'boolean') merged.onboardingDone = d.onboardingDone;
+  if (typeof d.daily === 'object' && d.daily !== null) {
+    merged.daily = d.daily as PersistedProgress['daily'];
+  }
+  if (Array.isArray(d.events)) merged.events = d.events as PersistedProgress['events'];
+  if (Array.isArray(d.confusion)) merged.confusion = d.confusion as PersistedProgress['confusion'];
+  if (typeof d.firstExposure === 'object' && d.firstExposure !== null) {
+    merged.firstExposure = d.firstExposure as PersistedProgress['firstExposure'];
+  }
+  const intro = d.introducedToday as { date?: unknown; wordIds?: unknown } | undefined;
+  if (intro && typeof intro.date === 'string' && Array.isArray(intro.wordIds)) {
+    merged.introducedToday = {
+      date: intro.date,
+      wordIds: intro.wordIds.filter((x): x is string => typeof x === 'string'),
+    };
+  }
   // Normalize every word to the current schema (stale stores crash the engine).
   const words: Record<string, WordProgress> = {};
   for (const [id, raw] of Object.entries(d.words as Record<string, unknown>)) {
     words[id] = normalizeWordProgress(raw, id);
   }
   merged.words = words;
-  // Validate the raw import fields (corrupt files must not poison the store).
-  if (!Array.isArray(d.events)) merged.events = [];
-  if (!Array.isArray(d.confusion)) merged.confusion = [];
-  if (typeof d.daily !== 'object' || d.daily === null) merged.daily = {};
   return merged;
+}
+
+function stashCorrupt(key: string, context: string): void {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      localStorage.setItem(`${key}:corrupt:${Date.now()}`, raw.slice(0, 200_000));
+    }
+    window.dispatchEvent(
+      new CustomEvent('lexis:quota-notice', {
+        detail: { action: context },
+      }),
+    );
+  } catch {
+    // best-effort only — never throw from the load path
+  }
 }
 
 function validateSettings(data: unknown): UserSettings {
@@ -191,6 +226,7 @@ export const persistence: PersistenceService = {
     try {
       return migrateProgress(raw);
     } catch {
+      stashCorrupt(PROGRESS_KEY, 'progress-corrupt');
       return null;
     }
   },

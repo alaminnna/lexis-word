@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
 import { Icon } from '../../components/ui/Icon';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
 import { Toggle } from '../../components/ui/Toggle';
@@ -57,7 +56,7 @@ function AIConnectCard({ cfg, setCfg, showProvider, setShowProvider, tokenNotice
             : `${pool.length} api${pool.length > 1 ? 's' : ''} · system`;
   const bad = !cfg.enabled || anyInvalid || resolved.source === 'none';
   return (
-    <Card>
+    <div>
       <button
         onClick={() => setShowProvider(!showProvider)}
         aria-expanded={showProvider}
@@ -113,9 +112,9 @@ function AIConnectCard({ cfg, setCfg, showProvider, setShowProvider, tokenNotice
           )}
         </div>
       )}
-    </Card>
-  );
-}
+     </div>
+   );
+ }
 
 /** Ordered API pool: tried top-to-bottom on every grade, keys rotate on caps. */
 function ApiPoolEditor({ cfg, setCfg }: {
@@ -214,7 +213,7 @@ function ApiEntryEditor({ entry, index, total, onPatch, onRemove, onMove }: {
         <input
           id={`api-name-${entry.id}`}
           value={entry.name}
-          onChange={(e) => onPatch({ name: e.target.value.slice(0, 40) || entry.name })}
+          onChange={(e) => onPatch({ name: e.target.value.slice(0, 40) })}
           className="min-h-[44px] min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2 font-medium hover:border-line focus:border-accent focus:outline-none"
         />
         <button onClick={() => onMove(-1)} disabled={index === 0} aria-label={`Move ${entry.name} up`}
@@ -222,7 +221,7 @@ function ApiEntryEditor({ entry, index, total, onPatch, onRemove, onMove }: {
         <button onClick={() => onMove(1)} disabled={index === total - 1} aria-label={`Move ${entry.name} down`}
           className="flex h-11 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-soft hover:text-ink disabled:opacity-30">↓</button>
         <button onClick={onRemove} aria-label={`Remove ${entry.name}`}
-          className="flex h-11 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-faint hover:text-bad">
+          className="flex h-11 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-soft hover:text-bad">
           <Icon name="x" size={16} />
         </button>
       </div>
@@ -241,7 +240,7 @@ function ApiEntryEditor({ entry, index, total, onPatch, onRemove, onMove }: {
         <ModelPicker baseUrl={entry.baseUrl} fetchKey={fetchKey} model={entry.model} onModel={(m) => onPatch({ model: m })} />
       </div>
       <div className="mt-2">
-        <p className="text-sm font-medium">Keys <span className="font-normal text-ink-faint">(one per line box — empty uses system keys)</span></p>
+        <p className="text-sm font-medium">Keys <span className="font-normal text-ink-soft">(one per line box — empty uses system keys)</span></p>
         {entry.keys.map((k, i) => (
           <div key={i} className="mt-1 flex gap-1.5">
             <label className="sr-only" htmlFor={`api-key-${entry.id}-${i}`}>{`Key ${i + 1} for ${entry.name}`}</label>
@@ -252,13 +251,13 @@ function ApiEntryEditor({ entry, index, total, onPatch, onRemove, onMove }: {
               className="min-h-[44px] min-w-0 flex-1 rounded-lg border border-line-strong bg-paper px-3 font-mono text-sm" />
             <button onClick={() => onPatch({ keys: entry.keys.filter((_, j) => j !== i) })}
               aria-label={`Remove key ${i + 1}`}
-              className="flex h-11 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-faint hover:text-bad">
+              className="flex h-11 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-soft hover:text-bad">
               <Icon name="x" size={15} />
             </button>
           </div>
         ))}
         <button onClick={() => onPatch({ keys: [...entry.keys, ''] })}
-          className="mt-1.5 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg px-2 text-sm text-accent-deep underline dark:text-accent">
+          className="mt-1.5 inline-flex min-h-[44px] cursor-pointer items-center rounded-lg px-2 text-sm text-accent-deep underline dark:text-accent">
           + Add key
         </button>
       </div>
@@ -358,6 +357,7 @@ function ModelPicker({ baseUrl, fetchKey, model, onModel }: {
           if (e.target.value === '__custom') setCustom(true);
           else onModel(e.target.value);
         }}
+        aria-describedby="ai-model-pick-hint"
         className="mt-1 min-h-[44px] w-full cursor-pointer rounded-lg border border-line-strong bg-paper px-2"
       >
         {!inList && !showCustom && model && <option value={model}>{model} (not in list)</option>}
@@ -366,6 +366,7 @@ function ModelPicker({ baseUrl, fetchKey, model, onModel }: {
         ))}
         <option value="__custom">Type another ID…</option>
       </select>
+      <p id="ai-model-pick-hint" className="mt-1 text-xs text-ink-soft">Free model IDs end in “-free”.</p>
       {showCustom && (
         <label className="mt-2 block text-sm">Custom model ID
           <input value={model} onChange={(e) => onModel(e.target.value)}
@@ -375,7 +376,7 @@ function ModelPicker({ baseUrl, fetchKey, model, onModel }: {
       )}
       {error && <p role="alert" className="mt-1 text-sm text-warn">{error}</p>}
       {!error && models && (
-        <p className="mt-1 text-xs text-ink-faint">
+        <p className="mt-1 text-xs text-ink-soft">
           {snapshotNote ? 'Saved snapshot (live list unreachable)' : `${models.filter((m) => m.free).length} free of ${models.length} models · live from the API`}
         </p>
       )}

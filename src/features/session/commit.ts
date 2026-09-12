@@ -99,7 +99,7 @@ export function commitSubmission(deps: CommitDeps, args: CommitArgs): void {
         sharesBengaliOrPosStage(word, chosen));
     }
   }
-  if (!sub.correct && isHesitation(item.activity, responseMs)) {
+  if (isHesitation(item.activity, responseMs)) {
     const other = sub.chosenWordId ?? (sub.typed ? findNearMissWord(sub.typed, item.wordId, WORDS) : null);
     const otherWord = other ? WORD_MAP[other] : undefined;
     if (other && otherWord) {

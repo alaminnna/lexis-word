@@ -172,11 +172,11 @@ export default function DiscriminationPage() {
             return (
               <li key={`${e.a}-${e.b}`}>
                 <Card className="flex flex-wrap items-center gap-3">
-                  <p className="font-display text-xl">{a.word} <span className="text-ink-faint">/</span> {b.word}</p>
+                  <p className="font-display text-xl">{a.word} <span className="text-ink-soft">/</span> {b.word}</p>
                   <span className={`rounded-full px-2 py-0.5 text-xs ${e.weight >= 2 ? 'bg-warn-soft text-warn' : 'bg-paper-deep text-ink-soft'}`}>
                     {e.weight >= 2 ? 'needs a drill' : 'watching'}
                   </span>
-                  <span className="text-sm text-ink-faint">last mixed {relTime(e.lastAt)}{e.resolvedStreak > 0 ? ` · ${e.resolvedStreak}/3 clean` : ''}</span>
+                  <span className="text-sm text-ink-soft">last mixed {relTime(e.lastAt)}{e.resolvedStreak > 0 ? ` · ${e.resolvedStreak}/3 clean` : ''}</span>
                   <span className="ml-auto flex gap-2">
                     <Link to={`/word/${a.id}`} className="inline-flex min-h-[44px] items-center text-sm text-accent-deep underline dark:text-accent">Compare</Link>
                     <Button variant="secondary" onClick={() => void startDrill(e)}>Drill</Button>

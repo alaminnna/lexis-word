@@ -11,21 +11,21 @@ import type { ActivityProps } from './types';
 export function MeetActivity({ word, onSubmit }: ActivityProps) {
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-sm tracking-wide text-ink-faint uppercase">New word · meet it first</p>
+      <p className="text-sm tracking-wide text-ink-soft uppercase">New word · meet it first</p>
       <WordHero word={word} large autoPlay />
       <div className="rounded-xl border border-line bg-paper-deep p-4">
         <p className="text-[15px] leading-relaxed">{highlightWord(word.sentence, word.word, word.forms ?? [])}</p>
-        <p className="mt-1 text-xs text-ink-faint">Study example</p>
+        <p className="mt-1 text-xs text-ink-soft">Study example</p>
       </div>
       {word.forms && word.forms.length > 0 && (
         <div>
-          <p className="mb-1 text-sm text-ink-faint">Word family</p>
+          <p className="mb-1 text-sm text-ink-soft">Word family</p>
           <p className="text-[15px] text-ink-soft">{word.forms.join(' · ')}</p>
         </div>
       )}
       <div>
         <Button onClick={() => onSubmit({ correct: true })}>Got it — test me later</Button>
-        <p className="mt-2 text-sm text-ink-faint">You&apos;ll be tested on this word shortly, then again tomorrow.</p>
+        <p className="mt-2 text-sm text-ink-soft">You&apos;ll be tested on this word shortly, then again tomorrow.</p>
       </div>
     </div>
   );

@@ -112,7 +112,7 @@ export function SessionRunner({ plan, startIndex = 0, replanned = false }: {
   const [hintsUsed, setHintsUsed] = useState(0);
   const [replays, setReplays] = useState(0);
   const [t0, setT0] = useState(() => Date.now());
-  const [results, setResults] = useState<{ wordId: string; correct: boolean }[]>([]);
+  const [results, setResults] = useState<{ wordId: string; correct: boolean; exact: boolean }[]>([]);
   const [failCounts, setFailCounts] = useState<Record<string, number>>({});
   const [rechecksAppended, setRechecksAppended] = useState(false);
   const [skipped, setSkipped] = useState(0);
@@ -151,8 +151,13 @@ export function SessionRunner({ plan, startIndex = 0, replanned = false }: {
     if (phase !== 'feedback') return;
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Enter') {
+        const t = e.target as HTMLElement | null;
+        if (t?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
         e.preventDefault();
         acknowledge();
+      }
+      if (e.key === 'Escape' && document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
       }
     };
     window.addEventListener('keydown', onKey);
@@ -229,10 +234,15 @@ export function SessionRunner({ plan, startIndex = 0, replanned = false }: {
     answerFeedback(sub.correct);
 
     setSubmission(sub);
-    setResults((r) => [...r, { wordId: item.wordId, correct: sub.correct }]);
-    setLiveMsg(sub.correct
-      ? 'Correct.'
-      : item.answer ? `Not quite. The answer is ${item.answer}.` : 'Not quite.');
+    const exact = sub.correct && !sub.nearMiss;
+    setResults((r) => [...r, { wordId: item.wordId, correct: sub.correct, exact }]);
+    setLiveMsg(
+      exact
+        ? 'Correct.'
+        : sub.nearMiss
+          ? `Close — check the spelling. The answer is ${item.answer}.`
+          : item.answer ? `Not quite. The answer is ${item.answer}.` : 'Not quite.',
+    );
 
     if (!sub.correct) {
       // Lagged in-session retry 3–6 items later as an easier variant (§7).
@@ -262,7 +272,18 @@ export function SessionRunner({ plan, startIndex = 0, replanned = false }: {
   const skip = (): void => {
     if (!item || phase !== 'stimulus') return;
     setSkipped((n) => n + 1);
-    advance(queue, index + 1, failCounts, rechecksAppended);
+    // Skipped items resurface once at the end instead of vanishing silently.
+    // Cap re-queues to avoid infinite skip loops.
+    const nextQueue = [...queue];
+    const alreadyRequeued = nextQueue.filter((q) => q.wordId === item.wordId && q.reason.kind === 'in-session-retry').length;
+    if (alreadyRequeued === 0 && nextQueue.length < plan.items.length + 10) {
+      nextQueue.push({
+        ...item,
+        isRetry: true,
+        reason: { kind: 'in-session-retry', humanText: `Skipped earlier — one more look at ${word?.word ?? 'this word'}.` },
+      });
+    }
+    advance(nextQueue, index + 1, failCounts, rechecksAppended);
   };
 
   if (done) return <SessionSummary plan={plan} results={results} skipped={skipped} minutes={elapsedMin()} replanned={replanned} endedEarly={endedEarly} remaining={remainingAtEnd} />;
@@ -297,10 +318,10 @@ export function SessionRunner({ plan, startIndex = 0, replanned = false }: {
         <ExitButton onEnd={() => finish(elapsedMin())} />
       </div>
       {replanned && (
-        <p className="mb-3 text-sm text-ink-faint">Listening items skipped — no voice on this device. Progress is saved as you go.</p>
+        <p className="mb-3 text-sm text-ink-soft">Listening items skipped — no voice on this device. Progress is saved as you go.</p>
       )}
 
-      <p className="mb-4 flex items-start gap-1.5 text-sm text-ink-faint">
+      <p className="mb-4 flex items-start gap-1.5 text-sm text-ink-soft">
         <Icon name="info" size={15} className="mt-0.5 shrink-0" />
         <span>{item.reason.humanText}</span>
       </p>
@@ -308,14 +329,14 @@ export function SessionRunner({ plan, startIndex = 0, replanned = false }: {
       {renderActivity(activityProps)}
 
       {phase === 'stimulus' && needsConfidence && (
-        <div className="mt-4 flex items-center gap-2" role="group" aria-label="How sure are you? (optional)">
-          <span className="text-sm text-ink-faint">Confidence:</span>
+        <div className="mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="How sure are you? (optional)">
+          <span className="text-sm text-ink-soft">Confidence:</span>
           {CONFIDENCE.map((c) => (
             <button
               key={c.v}
               onClick={() => setConfidence(confidence === c.v ? undefined : c.v)}
               aria-pressed={confidence === c.v}
-              className={`min-h-[36px] cursor-pointer rounded-full border px-3 text-sm transition-calm ${
+              className={`min-h-[44px] cursor-pointer rounded-full border px-4 text-sm transition-calm ${
                 confidence === c.v ? 'border-accent bg-accent-soft font-medium text-accent-deep dark:text-accent' : 'border-line text-ink-soft'
               }`}
             >
@@ -332,7 +353,7 @@ export function SessionRunner({ plan, startIndex = 0, replanned = false }: {
           </Button>
         )}
         {phase === 'stimulus' && item.activity !== 'meet' && (
-          <button onClick={skip} className="cursor-pointer text-sm text-ink-faint hover:text-ink">
+          <button onClick={skip} className="flex min-h-[44px] cursor-pointer items-center px-2 text-sm text-ink-soft hover:text-ink">
             Skip this one
           </button>
         )}
@@ -343,21 +364,30 @@ export function SessionRunner({ plan, startIndex = 0, replanned = false }: {
 
 function ExitButton({ onEnd }: { onEnd: () => void }) {
   const [armed, setArmed] = useState(false);
+  const [announce, setAnnounce] = useState('');
   useEffect(() => {
     if (!armed) return;
-    const t = setTimeout(() => setArmed(false), 3000);
+    setAnnounce('End armed — tap again within 3 seconds to end the session.');
+    const t = setTimeout(() => {
+      setArmed(false);
+      setAnnounce('End disarmed.');
+    }, 3000);
     return () => clearTimeout(t);
   }, [armed]);
   return (
-    <button
-      onClick={() => (armed ? onEnd() : setArmed(true))}
-      aria-label={armed ? 'Tap again to end the session' : 'End session (tap twice)'}
-      className={`inline-flex min-h-[44px] cursor-pointer items-center rounded-lg px-3 text-sm transition-calm ${
-        armed ? 'bg-bad-soft font-medium text-bad' : 'text-ink-faint hover:text-ink'
-      }`}
-    >
-      {armed ? 'Tap again to end' : 'End session'}
-    </button>
+    <>
+      <span aria-live="polite" className="sr-only">{announce}</span>
+      <button
+        onClick={() => (armed ? onEnd() : setArmed(true))}
+        aria-label={armed ? 'Tap again to end the session' : 'End session (tap twice)'}
+        aria-expanded={armed}
+        className={`inline-flex min-h-[44px] cursor-pointer items-center rounded-lg px-3 text-sm transition-calm ${
+          armed ? 'bg-bad-soft font-medium text-bad' : 'text-ink-soft hover:text-ink'
+        }`}
+      >
+        {armed ? 'Tap again to end' : 'End session'}
+      </button>
+    </>
   );
 }
 
@@ -392,7 +422,7 @@ function renderActivity(props: ActivityProps) {
 
 function SessionSummary({ plan, results, skipped, minutes, replanned, endedEarly, remaining }: {
   plan: SessionPlan;
-  results: { wordId: string; correct: boolean }[];
+  results: { wordId: string; correct: boolean; exact?: boolean }[];
   skipped: number;
   minutes: number;
   replanned: boolean;
@@ -401,9 +431,12 @@ function SessionSummary({ plan, results, skipped, minutes, replanned, endedEarly
 }) {
   const answered = results.length;
   const correct = results.filter((r) => r.correct).length;
+  const exactCorrect = results.filter((r) => (r.exact ?? r.correct)).length;
   const strengthened = new Set(results.filter((r) => r.correct).map((r) => r.wordId)).size;
   const missedWords = [...new Set(results.filter((r) => !r.correct).map((r) => r.wordId))];
+  const nearMissCount = results.filter((r) => r.correct && !(r.exact ?? true)).length;
   const accuracy = answered === 0 ? 0 : Math.round((correct / answered) * 100);
+  const strictAccuracy = answered === 0 ? 0 : Math.round((exactCorrect / answered) * 100);
 
   // Session-complete flourish, once (StrictMode-safe ref guard).
   const flourishRef = useRef(false);
@@ -414,11 +447,12 @@ function SessionSummary({ plan, results, skipped, minutes, replanned, endedEarly
     }
   }, []);
 
-  // Checkpoint record (UI-level): pass ≥85% seals the stage with its milestone.
+  // Checkpoint record (UI-level): pass ≥85% exact seals the stage.
+  // Near-misses count for encouragement in-session but not for sealing.
   useEffect(() => {
     if (plan.meta?.kind === 'checkpoint' && answered > 0) {
       try {
-        localStorage.setItem(`lexis:checkpoint:${plan.meta.stage}`, JSON.stringify({ accuracy, at: Date.now(), pass: accuracy >= 85 }));
+        localStorage.setItem(`lexis:checkpoint:${plan.meta.stage}`, JSON.stringify({ accuracy: strictAccuracy, at: Date.now(), pass: strictAccuracy >= 85 }));
       } catch {
         // UI-level record only; safe to skip.
       }
@@ -454,22 +488,26 @@ function SessionSummary({ plan, results, skipped, minutes, replanned, endedEarly
       ) : (
         <>
           <p className="mt-1 text-ink-soft">
-            {answered} answered · {accuracy}% correct · {minutes} min{skipped > 0 ? ` · ${skipped} skipped` : ''}
-            {replanned ? ' · listening adapted (no voice)' : ''}
+            {answered} answered · {accuracy}% correct{nearMissCount > 0 ? ` (${nearMissCount} close — spelling to fix)` : ''} · {minutes} min{skipped > 0 ? ` · ${skipped} skipped` : ''}
+            {replanned ? (
+              <> · listening skipped — <Link to="/settings" className="underline">no voice on this device</Link></>
+            ) : null}
           </p>
           <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-            <div className="rounded-xl border border-line p-4">
-              <p className="font-display text-3xl">{accuracy}%</p>
-              <p className="text-sm text-ink-soft">accuracy</p>
-            </div>
-            <div className="rounded-xl border border-line p-4">
-              <p className="font-display text-3xl">{strengthened}</p>
-              <p className="text-sm text-ink-soft">words strengthened</p>
-            </div>
-            <div className="rounded-xl border border-line p-4">
-              <p className="font-display text-3xl">{tomorrowLoad}</p>
-              <p className="text-sm text-ink-soft">words due tomorrow</p>
-            </div>
+            {([
+              { v: `${accuracy}%`, t: 'accuracy' },
+              { v: String(strengthened), t: 'words strengthened' },
+              { v: String(tomorrowLoad), t: 'words due tomorrow' },
+            ]).map((s, i) => (
+              <div
+                key={s.t}
+                className="rounded-xl border border-line p-4 animate-rise"
+                style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
+              >
+                <p className="font-display text-3xl">{s.v}</p>
+                <p className="text-sm text-ink-soft">{s.t}</p>
+              </div>
+            ))}
           </div>
         </>
       )}
@@ -479,7 +517,7 @@ function SessionSummary({ plan, results, skipped, minutes, replanned, endedEarly
           <p className="mt-1 text-ink-soft">
             {missedWords.map((id) => WORD_MAP[id]?.word ?? id).join(' · ')}
           </p>
-          <p className="mt-1 text-sm text-ink-faint">Memory fades; spaced returns will fix these.</p>
+          <p className="mt-1 text-sm text-ink-soft">Memory fades; spaced returns will fix these.</p>
         </div>
       )}
       {missedWords.length === 0 && answered > 0 && (

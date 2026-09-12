@@ -332,11 +332,15 @@ function discriminationItem(a: WordRecord, b: WordRecord, ctx: Ctx): SessionItem
 export function buildSession(input: BuilderInput): SessionPlan {
   const { words, progress, confusion, settings, seed, introducedToday, daysSinceActive, rollingSuccess, speechAvailable } = input;
   // Clock-skew guard: never plan against a future-biased clock (§22).
-  let now = input.now;
+  // A single future lastReviewedAt (clock change / bad import) must not push
+  // every due date into the future — clamp to wall-clock time.
+  const wallNow = Date.now();
+  let now = Math.min(input.now, wallNow);
   for (const id of Object.keys(progress)) {
     const p = progress[id]!;
     for (const d of DIMENSIONS) {
-      if (p.dimensions[d].lastReviewedAt > now) now = p.dimensions[d].lastReviewedAt;
+      const t = p.dimensions[d].lastReviewedAt;
+      if (t > now && t <= wallNow + 3_600_000) now = t;
     }
   }
   const rand = mulberry32(seed);
@@ -406,7 +410,8 @@ export function buildSession(input: BuilderInput): SessionPlan {
     usedWords.add(cand.word.id);
   }
 
-  // ---- Weak safety-net: lowest-strength attempted dims (strength < 40). ----
+  // ---- Weak safety-net: lowest-strength attempted dims (strength < 40,
+  // or < 55 shortly after a lapse so high-strength lapses aren't starved). ----
   const weakQuota = Math.round(N * 0.15);
   const weakItems: SessionItem[] = [];
   {
@@ -417,7 +422,9 @@ export function buildSession(input: BuilderInput): SessionPlan {
       if (!prog || prog.introducedAt === 0 || usedWords.has(word.id)) continue;
       for (const dim of DIMENSIONS) {
         const st = prog.dimensions[dim];
-        if (st.attempts === 0 || st.strength >= 40) continue;
+        if (st.attempts === 0) continue;
+        const threshold = st.lapses > 0 && st.recent.includes(false) ? 55 : 40;
+        if (st.strength >= threshold) continue;
         if (dim === 'listening' && !speechAvailable) continue;
         if (dim === 'production' && prog.dimensions.recall.strength < 30) continue;
         if (dim === 'forms' && (word.forms ?? []).length === 0) continue;

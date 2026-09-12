@@ -34,7 +34,7 @@ export function CompletionPanel({ word, correct, takeaway, onRetry, onStudio }: 
         <Button variant="secondary" onClick={onRetry}>Try another sentence</Button>
         <Button variant="ghost" onClick={onStudio}>Back to Writing Studio</Button>
       </div>
-      <p className="mt-4 text-sm text-ink-faint">
+      <p className="mt-4 text-sm text-ink-soft">
         <Link to={`/word/${word.id}`} className="underline">Open “{word.word}” in detail</Link>
       </p>
     </div>

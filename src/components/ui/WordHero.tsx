@@ -22,7 +22,14 @@ export function useSpeak() {
       setSpeaking(false);
     }
   };
-  return { speak, speaking };
+  const stop = (): void => {
+    try {
+      speech.cancel();
+    } finally {
+      setSpeaking(false);
+    }
+  };
+  return { speak, speaking, stop };
 }
 
 /** The word as hero: display serif headword, audio, Bengali per policy (§16). */
@@ -32,7 +39,7 @@ export function WordHero({ word, recallStrength = 0, autoPlay = false, large = f
   autoPlay?: boolean;
   large?: boolean;
 }) {
-  const { speak, speaking } = useSpeak();
+  const { speak, speaking, stop } = useSpeak();
   // Auto-play once per word: the runner reuses this instance across items,
   // so a mount-only flag would speak the first word and stay silent after.
   const playedFor = useRef<string | null>(null);
@@ -50,16 +57,18 @@ export function WordHero({ word, recallStrength = 0, autoPlay = false, large = f
           {word.word}
         </h2>
         <button
-          onClick={() => void speak(word.word)}
-          aria-label={speaking ? 'Playing pronunciation' : `Hear pronunciation of ${word.word}`}
-          aria-pressed={speaking}
+          onClick={() => {
+            if (speaking) stop();
+            else void speak(word.word);
+          }}
+          aria-label={speaking ? 'Stop pronunciation' : `Hear pronunciation of ${word.word}`}
           className="mt-2 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line-strong text-ink-soft transition-calm transition-colors hover:border-accent hover:text-accent-deep dark:hover:text-accent"
         >
-          <Icon name={speaking ? 'refresh' : 'speaker'} size={20} />
+          <Icon name={speaking ? 'x' : 'speaker'} size={20} />
         </button>
       </div>
       {word.pos && word.pos.length > 0 && (
-        <p className="text-sm tracking-wide text-ink-faint uppercase">{word.pos.join(' · ')}</p>
+        <p className="text-sm tracking-wide text-ink-soft uppercase">{word.pos.join(' · ')}</p>
       )}
       {word.shortDefinition && <p className="text-lg text-ink">{word.shortDefinition}</p>}
       <BengaliText bengali={word.bengali} recallStrength={recallStrength} />

@@ -4,7 +4,7 @@ import { uiTapFeedback } from '../../services/feedback';
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-accent text-paper hover:brightness-110 active:brightness-95 disabled:bg-line disabled:text-ink-faint',
+  primary: 'bg-accent text-paper hover:brightness-110 active:brightness-95 disabled:bg-line disabled:text-ink-soft',
   secondary: 'border border-line-strong text-ink hover:border-accent hover:text-accent-deep dark:hover:text-accent active:bg-accent-soft disabled:opacity-50',
   ghost: 'text-ink-soft hover:text-ink hover:bg-paper-deep active:bg-line disabled:opacity-50',
   danger: 'border border-bad/40 text-bad hover:bg-bad-soft active:brightness-95 disabled:opacity-50',
@@ -30,7 +30,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLBut
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       onClick={handleClick}
-      className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[15px] font-medium transition-calm transition-colors ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[15px] font-medium transition-calm transition-[color,background-color,border-color,transform] motion-safe:active:scale-[0.98] ${VARIANTS[variant]} ${className}`}
       {...rest}
     >
       {loading && (

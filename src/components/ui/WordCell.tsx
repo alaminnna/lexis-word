@@ -7,7 +7,8 @@ const STAGE_BG: Record<MasteryStage, string> = {
   1: 'bg-m1 text-ink',
   2: 'bg-m2 text-ink',
   3: 'bg-m3 text-ink',
-  4: 'bg-m4 text-paper',
+  // m4 (#4D9487) with white is 3.56:1 — use ink text (≈5.9:1) for AA.
+  4: 'bg-m4 text-ink',
   5: 'bg-m5 text-paper',
 };
 

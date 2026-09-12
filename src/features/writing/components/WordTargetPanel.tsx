@@ -15,14 +15,14 @@ export function WordTargetPanel({ word, recallStrength = 0 }: {
   const { speak, speaking } = useSpeak();
   return (
     <section aria-label="Target vocabulary" className="rounded-xl border border-line bg-paper-deep/60 p-4 md:p-5">
-      <p className="text-xs tracking-wide text-ink-faint uppercase">Target vocabulary</p>
+      <p className="text-xs tracking-wide text-ink-soft uppercase">Target vocabulary</p>
       <div className="mt-1 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="font-display text-[clamp(1.75rem,4vw,2.25rem)] font-medium leading-tight tracking-tight">
             {word.word}
           </h2>
           {word.pos && word.pos.length > 0 && (
-            <p className="mt-0.5 text-sm tracking-wide text-ink-faint uppercase">{word.pos.join(' · ')}</p>
+            <p className="mt-0.5 text-sm tracking-wide text-ink-soft uppercase">{word.pos.join(' · ')}</p>
           )}
         </div>
         <button
@@ -37,7 +37,7 @@ export function WordTargetPanel({ word, recallStrength = 0 }: {
       <BengaliText bengali={word.bengali} recallStrength={recallStrength} className="mt-1" />
       {word.forms && word.forms.length > 0 && (
         <p className="mt-2 text-sm text-ink-soft">
-          <span className="text-ink-faint">Family: </span>{word.forms.join(' · ')}
+          <span className="text-ink-soft">Family: </span>{word.forms.join(' · ')}
         </p>
       )}
       <p className="mt-3 border-t border-line pt-2 text-sm text-ink-soft">

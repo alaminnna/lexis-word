@@ -143,6 +143,16 @@ export default function InsightsPage() {
           ))}
         </div>
         {atRisk > 0 && <p className="mt-2 text-sm text-warn">{atRisk} words could use attention soon.</p>}
+        {/* Screen-reader/table alternative for the bar list */}
+        <table className="sr-only">
+          <caption>Mastery distribution</caption>
+          <thead><tr><th scope="col">Stage</th><th scope="col">Words</th></tr></thead>
+          <tbody>
+            {([0, 1, 2, 3, 4, 5] as const).map((s) => (
+              <tr key={s}><th scope="row">{STAGE_NAMES[s]}</th><td>{dist[s]}</td></tr>
+            ))}
+          </tbody>
+        </table>
       </Card>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -157,7 +167,7 @@ export default function InsightsPage() {
               {byActivity.slice(0, 6).map((r) => (
                 <li key={r.activity} className="flex items-baseline justify-between gap-2">
                   <span className="text-ink-soft">{activityLabel(r.activity)}</span>
-                  <span><strong>{Math.round(r.rate * 100)}%</strong> <span className="text-ink-faint">({r.n})</span></span>
+                  <span><strong>{Math.round(r.rate * 100)}%</strong> <span className="text-ink-soft">({r.n})</span></span>
                 </li>
               ))}
             </ul>
@@ -166,6 +176,7 @@ export default function InsightsPage() {
 
         <Card>
           <h2 className="font-display text-xl">First practice matters</h2>
+          <p className="mb-1 text-xs text-ink-soft">Correlation, not proof — sample sizes shown.</p>
           {exposure.length < 2 ? (
             <p className="mt-1 text-ink-soft">{COLLECTING}</p>
           ) : (
@@ -182,7 +193,7 @@ export default function InsightsPage() {
               {calibration.levels.map((l) => (
                 <p key={l.level}>
                   When you say <strong>‘{l.level}’</strong>, you&apos;re right{' '}
-                  <strong>{Math.round(l.rate * 100)}%</strong> of the time <span className="text-ink-faint">({l.n})</span>.
+                  <strong>{Math.round(l.rate * 100)}%</strong> of the time <span className="text-ink-soft">({l.n})</span>.
                 </p>
               ))}
               {calibration.levels[0] && calibration.levels[0].rate < 0.8 && calibration.levels[0].n >= 20 && (
@@ -201,7 +212,7 @@ export default function InsightsPage() {
               {errors.slice(0, 4).map((e) => (
                 <li key={e.kind}>
                   <strong>{SPELLING_ERROR_LABELS[e.kind]}</strong> — {e.count}×
-                  <span className="text-ink-faint"> ({e.words.slice(0, 3).map((id) => WORD_MAP[id]?.word ?? id).join(', ')})</span>
+                  <span className="text-ink-soft"> ({e.words.slice(0, 3).map((id) => WORD_MAP[id]?.word ?? id).join(', ')})</span>
                 </li>
               ))}
             </ul>
@@ -220,7 +231,7 @@ export default function InsightsPage() {
                   <Link to={`/word/${e.a}`} className="underline">{WORD_MAP[e.a]?.word}</Link>
                   {' / '}
                   <Link to={`/word/${e.b}`} className="underline">{WORD_MAP[e.b]?.word}</Link>
-                  <span className="text-ink-faint"> — weight {Math.round(e.weight * 10) / 10}</span>
+                  <span className="text-ink-soft"> — mixed up {Math.max(1, Math.round(e.weight))}×</span>
                 </li>
               ))}
             </ul>
@@ -254,7 +265,16 @@ export default function InsightsPage() {
             />
           ))}
         </div>
-        <p className="mt-1 text-xs text-ink-faint">Last 30 days · darker means more answers.</p>
+        <p className="mt-1 text-xs text-ink-soft">Last 30 days · taller means more answers.</p>
+        <table className="sr-only">
+          <caption>Daily answers, last 30 days</caption>
+          <thead><tr><th scope="col">Date</th><th scope="col">Answers</th></tr></thead>
+          <tbody>
+            {calendar.map((c) => (
+              <tr key={c.date}><th scope="row">{c.date}</th><td>{c.answered}</td></tr>
+            ))}
+          </tbody>
+        </table>
       </Card>
 
       <Card>
@@ -280,9 +300,9 @@ function ExposureLine({ exposure }: { exposure: { activity: ActivityType; rate: 
   if (!top) return null;
   return (
     <p className="mt-1 text-[15px]">
-      Words you first practiced through <strong>{activityLabel(top.activity)}</strong> are recalled at{' '}
-      <strong>{Math.round(top.rate * 100)}%</strong> after a week
-      {second ? <> vs <strong>{Math.round(second.rate * 100)}%</strong> via {activityLabel(second.activity)}</> : ''}.
+      Words first practiced through <strong>{activityLabel(top.activity)}</strong> show{' '}
+      <strong>{Math.round(top.rate * 100)}%</strong> recall after a week (n={top.n})
+      {second ? <> vs <strong>{Math.round(second.rate * 100)}%</strong> via {activityLabel(second.activity)} (n={second.n})</> : ''}.
     </p>
   );
 }

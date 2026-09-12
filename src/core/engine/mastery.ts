@@ -126,8 +126,12 @@ export function applyLearningEvent(
   const inSession = opts.inSession ?? true;
   const isRetry = opts.isRetry ?? false;
   const current = progress.dimensions[dimension];
-  // Clock-skew guard (§9, §22): never schedule in the past relative to last review.
-  const now = Math.max(event.timestamp, current.lastReviewedAt);
+  // Clock-skew guard (§9, §22): never schedule in the past relative to last review,
+  // and never trust a future timestamp more than 1h ahead of wall-clock.
+  const wallNow = Date.now();
+  const saneEventTs = event.timestamp > wallNow + 3_600_000 ? wallNow : event.timestamp;
+  const saneLast = current.lastReviewedAt > wallNow + 3_600_000 ? wallNow : current.lastReviewedAt;
+  const now = Math.max(saneEventTs, saneLast);
   const timeMod = timeModifier(event.activity, event.responseMs);
   const hintMod = event.hintsUsed > 0 ? 0.7 : 1;
   const weight = evidenceWeight(event.activity, event.aiVerified ?? false);

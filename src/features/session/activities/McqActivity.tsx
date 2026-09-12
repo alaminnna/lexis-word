@@ -42,6 +42,8 @@ export function McqActivity(props: ActivityProps & {
   useEffect(() => {
     if (phase !== 'stimulus') return;
     const onKey = (e: KeyboardEvent): void => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
       // Number keys answer immediately — same as tapping the option.
       if (e.key >= '1' && e.key <= String(Math.min(9, options.length))) {
         const idx = Number(e.key) - 1;
@@ -78,13 +80,13 @@ export function McqActivity(props: ActivityProps & {
     <div>
       {item.prompt && !listening && item.activity === 'mcq-word-meaning' && (
         <div className="mb-4">
-          <p className="text-sm text-ink-faint">What does this word mean?</p>
+          <p className="text-sm text-ink-soft">What does this word mean?</p>
           <p className="font-display text-4xl font-medium tracking-tight">{item.prompt}</p>
         </div>
       )}
       {item.prompt && !listening && item.activity === 'mcq-meaning-word' && (
         <div className="mb-4">
-          <p className="text-sm text-ink-faint">Which word means:</p>
+          <p className="text-sm text-ink-soft">Which word means:</p>
           <p className="text-xl leading-relaxed">“{renderPrompt(item.prompt)}”</p>
         </div>
       )}
@@ -93,21 +95,21 @@ export function McqActivity(props: ActivityProps & {
       )}
       {listening && (
         <div className="mb-5 flex flex-col items-start gap-2">
-          <p className="text-sm text-ink-faint">{listenLabel(item.activity)}</p>
+          <p className="text-sm text-ink-soft">{listenLabel(item.activity)}</p>
           <button
             onClick={() => void replay()}
-            disabled={phase !== 'stimulus' && false}
+            disabled={phase !== 'stimulus'}
             aria-label={speaking ? 'Playing audio' : 'Replay audio (Space)'}
             className="inline-flex min-h-[56px] cursor-pointer items-center gap-3 rounded-xl border border-line-strong px-5 py-3 text-lg transition-calm hover:border-accent hover:text-accent-deep dark:hover:text-accent"
           >
             <Icon name="speaker" size={24} />
             {speaking ? 'Playing…' : 'Listen'}
-            <kbd className="rounded border border-line px-1.5 text-xs text-ink-faint" aria-hidden>Space</kbd>
+            <kbd className="rounded border border-line px-1.5 text-xs text-ink-soft" aria-hidden>Space</kbd>
           </button>
           {item.prompt && <p className="text-xl leading-relaxed">{renderPrompt(item.prompt)}</p>}
         </div>
       )}
-      <div ref={listRef} className="flex flex-col gap-2" role="group" aria-label="Answer options">
+      <div ref={listRef} className="flex flex-col gap-2" role="radiogroup" aria-label="Answer options">
         {options.map((opt, idx) => {
           const isAnswer = opt === item.answer;
           const isPicked = submission?.chosenOption === opt;
@@ -122,7 +124,8 @@ export function McqActivity(props: ActivityProps & {
               key={`${idx}-${opt}`}
               disabled={phase !== 'stimulus'}
               onClick={() => submit(idx)}
-              aria-label={`Answer: ${opt}`}
+              role="radio"
+              aria-checked={isPicked && phase === 'feedback'}
               className={`flex min-h-[52px] cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3 text-left text-[17px] leading-snug transition-calm disabled:cursor-default ${tone}`}
             >
               <span aria-hidden className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-paper-deep text-sm text-ink-soft">
@@ -166,7 +169,7 @@ function renderPrompt(prompt: string): React.ReactNode {
         <span key={i}>
           {part}
           {i < parts.length - 1 && (
-            <span aria-label="blank" className="mx-1 inline-block min-w-16 border-b-2 border-accent text-center text-ink-faint">
+            <span aria-label="blank" className="mx-1 inline-block min-w-16 border-b-2 border-accent text-center text-ink-soft">
               ···
             </span>
           )}

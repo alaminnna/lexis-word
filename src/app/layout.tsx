@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { startPersistence, flushAll } from '../store/persist';
 import { useSettings } from '../store/settings';
 import { dictionary, type ApiStatus } from '../services/dictionary';
@@ -72,13 +72,15 @@ function QuotaNotice() {
   const [notice, setNotice] = useState<string | null>(null);
   useEffect(() => {
     const handler = (e: Event): void => {
-      const action = (e as CustomEvent<{ action: string }>).detail.action;
+      const action = (e as CustomEvent<{ action: string }>).detail?.action ?? '';
       setNotice(
         action === 'cache-pruned'
           ? 'Storage is full — cleared cached dictionary data. Your progress is safe.'
           : action === 'events-compacted'
             ? 'Storage is full — compacted old activity history into daily totals. Your progress is safe.'
-            : 'Storage is full and cannot free more space. Export your data from Settings to be safe.',
+            : action === 'progress-corrupt'
+              ? 'Saved progress looked corrupt, so we started fresh — a backup was kept on this device. Export from Settings if this repeats.'
+              : 'Storage is full and cannot free more space. Export your data from Settings to be safe.',
       );
     };
     window.addEventListener('lexis:quota-notice', handler);
@@ -88,34 +90,65 @@ function QuotaNotice() {
   return <Banner tone="warn" onDismiss={() => setNotice(null)}>{notice}</Banner>;
 }
 
-function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+function MoreSheet({ open, onClose, returnRef }: { open: boolean; onClose: () => void; returnRef: React.RefObject<HTMLButtonElement | null> }) {
+  const firstRef = useState(() => ({ current: null as HTMLAnchorElement | null }))[0];
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onClose();
+      // Simple focus trap: keep Tab inside the sheet.
+      if (e.key === 'Tab') {
+        const root = document.getElementById('more-sheet');
+        if (!root) return;
+        const focusables = Array.from(root.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'));
+        if (focusables.length === 0) return;
+        const first = focusables[0]!;
+        const last = focusables[focusables.length - 1]!;
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+    // Move focus in, return focus on close.
+    const t = setTimeout(() => firstRef.current?.focus(), 30);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      clearTimeout(t);
+      returnRef.current?.focus();
+    };
+  }, [open, onClose, firstRef, returnRef]);
   if (!open) return null;
   const items = RAIL.slice(4);
   return (
     <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="More sections">
-      <button aria-label="Close menu" onClick={onClose} className="absolute inset-0 cursor-pointer bg-ink/30" />
-      <nav className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-line bg-paper p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <div aria-hidden className="absolute inset-0 bg-ink/30 transition-calm motion-safe:starting:opacity-0" onClick={onClose} />
+      <nav id="more-sheet" aria-label="More sections" className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-line bg-paper p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] transition-transform duration-250 ease-[cubic-bezier(0.33,1,0.68,1)] motion-safe:starting:translate-y-full">
         <div className="grid grid-cols-2 gap-2">
-          {items.map((item) => (
+          {items.map((item, i) => (
             <NavLink
               key={item.to}
               to={item.to}
+              ref={i === 0 ? firstRef as React.Ref<HTMLAnchorElement> : undefined}
               onClick={onClose}
-              className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-2 text-[15px] text-ink hover:bg-paper-deep"
+              className={({ isActive }) =>
+                `flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-2 text-[15px] hover:bg-paper-deep ${
+                  isActive ? 'bg-accent-soft font-medium text-accent-deep dark:text-accent' : 'text-ink'
+                }`
+              }
             >
               <Icon name={item.icon} size={20} className="text-ink-soft" />
               {item.label}
             </NavLink>
           ))}
         </div>
+        <button onClick={onClose} className="mt-2 flex min-h-[44px] w-full cursor-pointer items-center justify-center rounded-lg text-sm text-ink-soft">
+          Close
+        </button>
       </nav>
     </div>
   );
@@ -142,6 +175,11 @@ export function AppLayout() {
   const theme = useSettings((s) => s.theme);
   const displayName = useSettings((s) => s.displayName);
   const [moreOpen, setMoreOpen] = useState(false);
+  const moreBtnRef = useRef<HTMLButtonElement | null>(null);
+  const location = useLocation();
+  const moreActive = RAIL.slice(4).some((r) =>
+    r.end ? location.pathname === r.to : location.pathname === r.to || location.pathname.startsWith(`${r.to}/`),
+  );
 
   useEffect(() => {
     startPersistence();
@@ -164,13 +202,15 @@ export function AppLayout() {
       </a>
       {/* Desktop left rail */}
       <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col gap-1 overflow-y-auto border-r border-line bg-paper px-4 py-6 md:flex" aria-label="Primary">
-        <p className="mb-4 px-3 font-display text-2xl font-semibold tracking-tight">Lexis</p>
-        <nav className="flex flex-col gap-1">
+        <Link to="/" className="mb-4 px-3 font-display text-2xl font-semibold tracking-tight" aria-label="Lexis home">
+          Lexis
+        </Link>
+        <nav className="flex flex-col gap-1" aria-label="Primary">
           {RAIL.map((item) => (
             <RailLink key={item.to} {...item} />
           ))}
         </nav>
-        <p className="mt-auto px-3 pt-6 text-xs text-ink-faint">
+        <p className="mt-auto px-3 pt-6 text-xs text-ink-soft">
           {displayName ? `${displayName} · ` : ''}IELTS Academic · 499 words
         </p>
       </aside>
@@ -187,7 +227,7 @@ export function AppLayout() {
 
       {/* Mobile bottom tab bar */}
       <nav
-        aria-label="Primary"
+        aria-label="Primary mobile"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper pb-[env(safe-area-inset-bottom)] md:hidden"
       >
         <div className="grid grid-cols-5">
@@ -198,7 +238,7 @@ export function AppLayout() {
               end={item.end}
               className={({ isActive }) =>
                 `flex min-h-[56px] cursor-pointer flex-col items-center justify-center gap-1 text-xs ${
-                  isActive ? 'font-medium text-accent-deep dark:text-accent' : 'text-ink-faint'
+                  isActive ? 'font-medium text-accent-deep dark:text-accent' : 'text-ink-soft'
                 }`
               }
             >
@@ -207,16 +247,21 @@ export function AppLayout() {
             </NavLink>
           ))}
           <button
+            ref={moreBtnRef}
             onClick={() => setMoreOpen(true)}
             aria-haspopup="dialog"
-            className="flex min-h-[56px] cursor-pointer flex-col items-center justify-center gap-1 text-xs text-ink-faint"
+            aria-expanded={moreOpen}
+            aria-current={moreActive ? 'page' : undefined}
+            className={`flex min-h-[56px] cursor-pointer flex-col items-center justify-center gap-1 text-xs ${
+              moreActive ? 'font-medium text-accent-deep dark:text-accent' : 'text-ink-soft'
+            }`}
           >
-            <Icon name="sliders" size={22} />
+            <Icon name="menu" size={22} />
             More
           </button>
         </div>
       </nav>
-      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} />
+      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} returnRef={moreBtnRef} />
     </div>
   );
 }

@@ -21,6 +21,8 @@ export function SpellingBuildActivity({ item, word, phase, onSubmit }: ActivityP
   useEffect(() => {
     if (phase !== 'stimulus') return;
     const onKey = (e: KeyboardEvent): void => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
       if (e.key === 'Backspace' && picked.length > 0) {
         setPicked(picked.slice(0, -1));
         setWrong(false);
@@ -46,15 +48,15 @@ export function SpellingBuildActivity({ item, word, phase, onSubmit }: ActivityP
       <p className="mb-4 text-ink-soft">Build the word from its letters, in order.</p>
       <div
         aria-label={`Your assembly, ${current.length} of ${answer.length} letters`}
-        className={`mb-4 flex min-h-[64px] flex-wrap gap-1.5 rounded-xl border-2 p-3 font-display text-3xl ${wrong ? 'border-bad bg-bad-soft' : 'border-line'}`}
+        className={`mb-4 flex min-h-[64px] flex-wrap items-center gap-1.5 rounded-xl border-2 p-3 font-display text-2xl sm:text-3xl ${wrong ? 'border-bad bg-bad-soft' : 'border-line'}`}
       >
-        {picked.length === 0 && <span className="text-ink-faint">Tap letters below…</span>}
+        {picked.length === 0 && <span className="text-ink-soft">Tap letters below…</span>}
         {picked.map((bi, i) => (
           <button
             key={i}
             onClick={() => phase === 'stimulus' && setPicked(picked.filter((_, j) => j !== i))}
             aria-label={`Remove ${bank[bi]}`}
-            className="flex h-12 w-10 cursor-pointer items-center justify-center rounded-lg bg-accent-soft text-accent-deep dark:text-accent"
+            className="flex h-11 min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-lg bg-accent-soft text-accent-deep dark:text-accent"
           >
             {bank[bi]}
           </button>
@@ -63,6 +65,8 @@ export function SpellingBuildActivity({ item, word, phase, onSubmit }: ActivityP
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Letter bank">
         {bank.map((ch, i) => {
           const used = picked.includes(i);
+          const occurrence = bank.slice(0, i + 1).filter((c) => c === ch).length;
+          const totalOfCh = bank.filter((c) => c === ch).length;
           return (
             <button
               key={i}
@@ -71,8 +75,8 @@ export function SpellingBuildActivity({ item, word, phase, onSubmit }: ActivityP
                 setPicked([...picked, i]);
                 setWrong(false);
               }}
-              aria-label={`Add letter ${ch}`}
-              className="flex h-12 w-10 cursor-pointer items-center justify-center rounded-lg border border-line-strong font-display text-2xl transition-calm hover:border-accent disabled:cursor-default disabled:opacity-25"
+              aria-label={totalOfCh > 1 ? `Add letter ${ch} (${occurrence} of ${totalOfCh})` : `Add letter ${ch}`}
+              className="flex h-11 min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-lg border border-line-strong font-display text-2xl transition-calm hover:border-accent disabled:cursor-default disabled:opacity-25"
             >
               {ch}
             </button>
@@ -83,7 +87,7 @@ export function SpellingBuildActivity({ item, word, phase, onSubmit }: ActivityP
         <button
           onClick={submit}
           disabled={phase !== 'stimulus' || current.length !== answer.length}
-          className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg bg-accent px-5 py-2.5 font-medium text-paper transition-calm hover:brightness-110 disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-faint"
+          className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg bg-accent px-5 py-2.5 font-medium text-paper transition-calm hover:brightness-110 disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-soft"
         >
           Check
         </button>
@@ -137,6 +141,8 @@ export function FlashTypeActivity({ item, word, phase, onSubmit }: ActivityProps
   useEffect(() => {
     if (phase !== 'stimulus') return;
     const onKey = (e: KeyboardEvent): void => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
       if (e.key === 'Enter' && value.trim()) submit();
     };
     window.addEventListener('keydown', onKey);
@@ -156,24 +162,32 @@ export function FlashTypeActivity({ item, word, phase, onSubmit }: ActivityProps
         {visible ? (
           <span className="font-display text-4xl">{answer}</span>
         ) : (
-          <span className="text-ink-faint">Type it from memory…</span>
+          <span className="text-ink-soft">Type it from memory…</span>
         )}
       </div>
+      {!visible && phase === 'stimulus' && (
+        <button
+          onClick={() => setVisible(true)}
+          className="mb-3 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg border border-line-strong px-4 py-2 text-sm text-ink-soft transition-calm hover:border-accent hover:text-accent-deep dark:hover:text-accent"
+        >
+          Show it again
+        </button>
+      )}
       <label htmlFor="flash-answer" className="sr-only">Type the word you just saw</label>
       <input
         id="flash-answer"
         value={value}
-        disabled={phase !== 'stimulus' || visible}
+        readOnly={visible}
         onChange={(e) => setValue(e.target.value)}
-        autoFocus
         placeholder={visible ? 'Watch…' : 'Type…'}
-        className="min-h-[52px] w-full rounded-xl border-2 border-line bg-paper px-4 py-3 font-display text-2xl transition-calm placeholder:text-ink-faint focus:border-accent focus:outline-none disabled:opacity-70"
+        aria-disabled={visible}
+        className="min-h-[52px] w-full rounded-xl border-2 border-line bg-paper px-4 py-3 font-display text-2xl transition-calm placeholder:text-ink-soft focus:border-accent focus:outline-none"
         {...INPUT_HYGIENE}
       />
       <button
         onClick={submit}
         disabled={phase !== 'stimulus' || visible || !value.trim()}
-        className="mt-3 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg bg-accent px-5 py-2.5 font-medium text-paper transition-calm hover:brightness-110 disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-faint"
+        className="mt-3 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg bg-accent px-5 py-2.5 font-medium text-paper transition-calm hover:brightness-110 disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-soft"
       >
         Check
       </button>

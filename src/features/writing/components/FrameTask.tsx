@@ -31,7 +31,7 @@ export function FrameTask({ word, frameIdx, picks, onPicks, onCheck }: {
 
   return (
     <div>
-      <p className="mb-1 text-sm text-ink-faint">Complete the academic sentence naturally:</p>
+      <p className="mb-1 text-sm text-ink-soft">Complete the academic sentence naturally:</p>
       <p className="text-xl leading-relaxed">
         {frame.template.split('____').map((part, i, arr) => (
           <span key={i}>
@@ -56,7 +56,7 @@ export function FrameTask({ word, frameIdx, picks, onPicks, onCheck }: {
           </button>
         ))}
         {picks.length > 0 && (
-          <button onClick={() => onPicks([])} className="min-h-[44px] cursor-pointer px-3 text-sm text-ink-faint hover:text-ink">
+          <button onClick={() => onPicks([])} className="min-h-[44px] cursor-pointer px-3 text-sm text-ink-soft hover:text-ink">
             Clear
           </button>
         )}
@@ -73,9 +73,10 @@ export function FrameTask({ word, frameIdx, picks, onPicks, onCheck }: {
 }
 
 export const FRAMES = [
-  { template: 'The findings ____ significant implications for ____.', slots: 2 },
-  { template: 'There is growing ____ that ____ plays a central role in ____.', slots: 3 },
-  { template: 'Policymakers must ____ the long-term ____ of this trend.', slots: 2 },
+  { template: 'The findings ____ significant implications for policy.', slots: 1 },
+  { template: 'There is growing ____ that diet plays a central role in health.', slots: 1 },
+  { template: 'Policymakers must ____ the long-term effects of this trend.', slots: 1 },
+  { template: 'The data ____ a clear link between the two variables.', slots: 1 },
 ];
 
 export function FrameResult({ correct, target, onNext }: {

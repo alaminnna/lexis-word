@@ -3,7 +3,7 @@
 
 export type IconName =
   | 'home' | 'layers' | 'book' | 'headphones' | 'pen' | 'swap' | 'chart'
-  | 'sliders' | 'speaker' | 'check' | 'x' | 'chevron-left' | 'chevron-right'
+  | 'sliders' | 'menu' | 'speaker' | 'check' | 'x' | 'chevron-left' | 'chevron-right'
   | 'arrow-right' | 'refresh' | 'download' | 'upload' | 'trash' | 'play'
   | 'info' | 'alert' | 'search' | 'clock' | 'calendar' | 'target' | 'type'
   | 'eye' | 'globe' | 'flag';
@@ -17,6 +17,7 @@ const PATHS: Record<IconName, React.ReactNode> = {
   swap: (<><polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></>),
   chart: (<><line x1="12" y1="20" x2="12" y2="10" /><line x1="18" y1="20" x2="18" y2="4" /><line x1="6" y1="20" x2="6" y2="16" /></>),
   sliders: (<><line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" /></>),
+  menu: (<><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></>),
   speaker: (<><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" /></>),
   check: (<polyline points="20 6 9 17 4 12" />),
   x: (<><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>),

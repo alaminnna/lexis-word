@@ -23,7 +23,7 @@ function greeting(): string {
 }
 
 /**
- * Today (home): only the next useful action — never the 500-word wall (§0).
+ * Today (home): only the next useful action — never the full word wall.
  * Greeting, plan summary, one CTA, lab entries, overdue warning, quiet stats.
  */
 export default function TodayPage() {
@@ -50,12 +50,16 @@ export default function TodayPage() {
       const { introducedToday, daysSinceActive, rolling } = todayInputs(full, Date.now());
       const speech = await getSpeechAvailable();
       if (runToken.current !== myRun) return;
-      const plan = buildSession({
-        words: WORDS, progress: full.words, confusion: full.confusion, settings: st,
-        seed: st.seed + Math.floor(Date.now() / 86_400_000), now: Date.now(),
-        introducedToday, daysSinceActive, rollingSuccess: rolling, speechAvailable: speech,
-      });
-      if (runToken.current === myRun) setPreview(plan);
+      try {
+        const plan = buildSession({
+          words: WORDS, progress: full.words, confusion: full.confusion, settings: st,
+          seed: st.seed + Math.floor(Date.now() / 86_400_000) + (Date.now() % 997), now: Date.now(),
+          introducedToday, daysSinceActive, rollingSuccess: rolling, speechAvailable: speech,
+        });
+        if (runToken.current === myRun) setPreview(plan);
+      } catch {
+        if (runToken.current === myRun) setPreview(null);
+      }
     })();
     // Background prefetch of tomorrow's enrichment (§4 session isolation).
     const full = progressSnapshot();
@@ -164,8 +168,8 @@ export default function TodayPage() {
       </nav>
 
       {counts.atRisk > 0 && (
-        <p className="text-sm text-ink-faint">
-          {counts.atRisk} word{counts.atRisk === 1 ? '' : 's'} fading — {counts.all} due in total.{' '}
+        <p className="text-sm text-ink-soft" aria-live="polite">
+          {counts.atRisk} word{counts.atRisk === 1 ? '' : 's'} need review — {counts.all} due in total.{' '}
           <Link to="/review" className="underline">Review now</Link>
         </p>
       )}

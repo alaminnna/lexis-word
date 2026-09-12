@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
 import { Icon } from '../../components/ui/Icon';
+import { Banner } from '../../components/ui/Banner';
 
 /**
  * First-run onboarding: ≤90 seconds, 5 steps, skippable (§17).
@@ -21,6 +22,7 @@ export default function OnboardingPage() {
   const [name, setName] = useState(settings.displayName);
   const [goal, setGoal] = useState<'abroad' | 'work' | 'migration'>('abroad');
   const [voiceState, setVoiceState] = useState<'idle' | 'playing' | 'ok' | 'unavailable'>('idle');
+  const [error, setError] = useState<string | null>(null);
 
   const saveName = (raw: string): void => {
     settings.update({ displayName: raw.trim().slice(0, 40) });
@@ -35,8 +37,9 @@ export default function OnboardingPage() {
     try {
       persistence.saveProgress(progressSnapshot());
       persistence.saveSettings(settingsSnapshot());
-    } catch {
-      // storage errors surface via the quota flow; onboarding still completes
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save onboarding choices. Storage may be full or private.');
+      return;
     }
     navigate('/', { replace: true });
   };
@@ -72,7 +75,7 @@ export default function OnboardingPage() {
           placeholder="e.g. Arif"
           autoComplete="given-name"
           maxLength={40}
-          className="min-h-[48px] w-full rounded-xl border border-line-strong bg-paper px-3 text-[16px] transition-calm placeholder:text-ink-faint focus:border-accent focus:outline-none"
+          className="min-h-[48px] w-full rounded-xl border border-line-strong bg-paper px-3 text-[16px] transition-calm placeholder:text-ink-soft focus:border-accent focus:outline-none"
         />
       </div>
     </div>,
@@ -80,55 +83,65 @@ export default function OnboardingPage() {
     <div key="goal">
       <h1 className="font-display text-3xl font-medium tracking-tight">What brings you here?</h1>
       <p className="mt-2 text-ink-soft">This sets a sensible starting pace. You can change everything later.</p>
-      <div className="mt-5 flex flex-col gap-2" role="radiogroup" aria-label="Your goal">
+      <fieldset className="mt-5 flex flex-col gap-2">
+        <legend className="sr-only">Your goal</legend>
         {([
           { v: 'abroad', t: 'Study abroad', d: 'University admission, English-medium courses' },
           { v: 'work', t: 'Work', d: 'Professional registration or a job abroad' },
           { v: 'migration', t: 'Migration', d: 'Visa points and settlement requirements' },
         ] as const).map((o) => (
-          <button
-            key={o.v}
-            role="radio"
-            aria-checked={goal === o.v}
-            onClick={() => {
-              setGoal(o.v);
-              settings.update({ dailyNewTarget: o.v === 'abroad' ? 10 : o.v === 'work' ? 8 : 6 });
-            }}
-            className={`cursor-pointer rounded-xl border p-4 text-left transition-calm ${
+          <label key={o.v} className="cursor-pointer rounded-xl border p-4 text-left transition-calm">
+            <input
+              type="radio"
+              name="onboarding-goal"
+              value={o.v}
+              checked={goal === o.v}
+              onChange={() => {
+                setGoal(o.v);
+                settings.update({ dailyNewTarget: o.v === 'abroad' ? 10 : o.v === 'work' ? 8 : 6 });
+              }}
+              className="sr-only"
+            />
+            <div className={`transition-calm ${
               goal === o.v ? 'border-accent bg-accent-soft' : 'border-line hover:border-line-strong'
-            }`}
-          >
-            <p className="font-medium">{o.t}</p>
-            <p className="text-sm text-ink-soft">{o.d}</p>
-          </button>
+            }`}>
+              <p className="font-medium">{o.t}</p>
+              <p className="text-sm text-ink-soft">{o.d}</p>
+            </div>
+          </label>
         ))}
-      </div>
+      </fieldset>
     </div>,
     // 1 — time budget → item count
     <div key="time">
       <h1 className="font-display text-3xl font-medium tracking-tight">How much time per session?</h1>
       <p className="mt-2 text-ink-soft">Short, frequent sessions beat rare long ones. Pick what fits your day.</p>
-      <div className="mt-5 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Session length">
+      <fieldset className="mt-5 grid grid-cols-2 gap-2">
+        <legend className="sr-only">Session length</legend>
         {([
           { items: 10, mins: '≈ 8 min' },
           { items: 15, mins: '≈ 12 min' },
           { items: 20, mins: '≈ 16 min' },
           { items: 25, mins: '≈ 20 min' },
         ]).map((o) => (
-          <button
-            key={o.items}
-            role="radio"
-            aria-checked={settings.sessionLengthTarget === o.items}
-            onClick={() => settings.update({ sessionLengthTarget: o.items })}
-            className={`cursor-pointer rounded-xl border p-4 text-left transition-calm ${
+          <label key={o.items} className="cursor-pointer rounded-xl border p-4 text-left transition-calm">
+            <input
+              type="radio"
+              name="onboarding-time"
+              value={o.items.toString()}
+              checked={settings.sessionLengthTarget === o.items}
+              onChange={() => settings.update({ sessionLengthTarget: o.items })}
+              className="sr-only"
+            />
+            <div className={`transition-calm ${
               settings.sessionLengthTarget === o.items ? 'border-accent bg-accent-soft' : 'border-line hover:border-line-strong'
-            }`}
-          >
-            <p className="font-display text-2xl">{o.items} items</p>
-            <p className="text-sm text-ink-soft">{o.mins} per session</p>
-          </button>
+            }`}>
+              <p className="font-display text-2xl">{o.items} items</p>
+              <p className="text-sm text-ink-soft">{o.mins} per session</p>
+            </div>
+          </label>
         ))}
-      </div>
+      </fieldset>
     </div>,
     // 2 — Bengali policy
     <div key="bn">
@@ -180,13 +193,21 @@ export default function OnboardingPage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-4 py-10">
       <p className="font-display text-xl font-semibold">Lexis</p>
-      <div className="mt-6 flex-1">{steps[step]}</div>
+      {error && <Banner tone="warn" onDismiss={() => setError(null)} className="mb-4">{error}</Banner>}
+      <ol className="sr-only" aria-label="Onboarding steps">
+        <li aria-current="step">Your name</li>
+        <li>Your goal</li>
+        <li>Session length</li>
+        <li>Bengali policy</li>
+        <li>Audio check</li>
+      </ol>
+      <div key={step} className="mt-6 flex-1 animate-fade">{steps[step]}</div>
       <div className="mt-8 flex items-center justify-between">
-        <button onClick={finish} className="cursor-pointer text-sm text-ink-faint hover:text-ink">
+        <Button variant="ghost" onClick={finish} className="min-h-[44px]">
           Skip setup
-        </button>
+        </Button>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-ink-faint" aria-hidden>{step + 1} / 5</span>
+          <span className="text-sm text-ink-soft" aria-hidden>{step + 1} / 5</span>
           {step > 0 && (
             <Button variant="ghost" onClick={() => setStep(step - 1)}>
               Back

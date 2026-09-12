@@ -40,7 +40,7 @@ function VirtualList({ ids, renderRow }: { ids: string[]; renderRow: (id: string
     <div ref={ref} className="max-h-[60vh] overflow-y-auto rounded-xl border border-line" role="list" aria-label="Words">
       <div style={{ height: ids.length * ROW_H, position: 'relative' }}>
         {ids.slice(start, end).map((id, i) => (
-          <div key={id} role="listitem" style={{ position: 'absolute', top: (start + i) * ROW_H, left: 0, right: 0, height: ROW_H }}>
+          <div key={id} role="listitem" aria-setsize={ids.length} aria-posinset={start + i + 1} style={{ position: 'absolute', top: (start + i) * ROW_H, left: 0, right: 0, height: ROW_H }}>
             {renderRow(id)}
           </div>
         ))}
@@ -68,9 +68,10 @@ export default function LibraryPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const bq = query.trim();
     return WORDS.filter((w) => {
       if (q && !(w.word.includes(q) || (w.shortDefinition ?? '').toLowerCase().includes(q) ||
-        (typeof w.bengali === 'string' ? w.bengali.includes(query.trim()) : false))) return false;
+        (Array.isArray(w.bengali) ? w.bengali.join(' ').includes(bq) : (typeof w.bengali === 'string' ? w.bengali.includes(bq) : false)))) return false;
       if (stage !== null && w.stage !== stage) return false;
       if (topic !== null && topicOf(w) !== topic) return false;
       if (pos !== null && w.pos?.[0] !== pos) return false;
@@ -91,9 +92,11 @@ export default function LibraryPage() {
     const { introducedToday, daysSinceActive, rolling } = todayInputs(full, Date.now());
     const plan = buildSession({
       words: subset, progress: full.words, confusion: full.confusion, settings,
-      seed: settings.seed + Math.floor(Date.now() / 86_400_000) + 7,
-      now: Date.now(), introducedToday, daysSinceActive, rollingSuccess: rolling, speechAvailable: true,
+      seed: settings.seed + Math.floor(Date.now() / 86_400_000) + 7 + (Date.now() % 997),
+      now: Date.now(), introducedToday, daysSinceActive, rollingSuccess: rolling,
+      speechAvailable: typeof window !== 'undefined' && 'speechSynthesis' in window,
     });
+    if (plan.items.length === 0) return;
     plan.id = `rev_topic_${Date.now().toString(36)}`;
     plan.meta = { kind: 'review', filter: topic ?? 'mixed' };
     launchPlan(plan);
@@ -106,14 +109,14 @@ export default function LibraryPage() {
       <div className="mb-3 flex gap-2">
         <label htmlFor="library-search" className="sr-only">Search words, meanings, or Bengali</label>
         <div className="relative flex-1">
-          <Icon name="search" size={18} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-faint" />
+          <Icon name="search" size={18} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-soft" />
           <input
             id="library-search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search a word, meaning, or বাংলা…"
             autoComplete="off"
-            className="min-h-[48px] w-full rounded-xl border border-line-strong bg-paper pr-3 pl-10 text-[16px] transition-calm placeholder:text-ink-faint focus:border-accent focus:outline-none"
+            className="min-h-[48px] w-full rounded-xl border border-line-strong bg-paper pr-3 pl-10 text-[16px] transition-calm placeholder:text-ink-soft focus:border-accent focus:outline-none"
           />
         </div>
       </div>
@@ -141,13 +144,17 @@ export default function LibraryPage() {
       {(topic || query || stage !== null) && filtered.length > 0 && (
         <div className="mb-3">
           <Button variant="secondary" onClick={startTopicQuiz}>
-            <Icon name="play" size={16} /> Quiz these {filtered.length} words
+            <Icon name="play" size={16} /> {filtered.length > 60 ? `Quiz first 60 of ${filtered.length} words` : `Quiz these ${filtered.length} words`}
           </Button>
         </div>
       )}
-      <p className="mb-2 text-sm text-ink-faint" aria-live="polite">{filtered.length} word{filtered.length === 1 ? '' : 's'}</p>
+      <p className="mb-2 text-sm text-ink-soft" aria-live="polite">{filtered.length} word{filtered.length === 1 ? '' : 's'}</p>
       {filtered.length === 0 ? (
-        <EmptyState title="No matches" body="Try a shorter search or clear a filter." />
+        <EmptyState
+          title="No matches"
+          body="Try a shorter search or clear a filter."
+          action={<Button variant="secondary" onClick={() => { setQuery(''); setStage(null); setTopic(null); setPos(null); setMastery(null); setAtRiskOnly(false); }}>Clear all filters</Button>}
+        />
       ) : (
         <VirtualList
           ids={filtered}
@@ -161,8 +168,8 @@ export default function LibraryPage() {
               >
                 <span className="font-display text-lg">{w.word}</span>
                 <span className="flex-1 truncate text-sm text-ink-soft">{w.shortDefinition}</span>
-                {atRisk.has(id) && <span className="shrink-0 rounded-full bg-warn-soft px-2 py-0.5 text-xs text-warn">fading</span>}
-                <span className="shrink-0 text-xs text-ink-faint">{STAGE_NAMES[st]}</span>
+                {atRisk.has(id) && <span className="shrink-0 rounded-full bg-warn-soft px-2 py-0.5 text-xs text-warn">needs review</span>}
+                <span className="shrink-0 text-xs text-ink-soft">{STAGE_NAMES[st]}</span>
               </button>
             );
           }}
@@ -179,7 +186,6 @@ function FilterSelect({ label, value, onChange, options }: {
     <label className="inline-flex items-center gap-1.5 text-sm text-ink-soft">
       <span className="sr-only">{label}</span>
       <select
-        aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="min-h-[44px] cursor-pointer rounded-lg border border-line bg-paper px-2"

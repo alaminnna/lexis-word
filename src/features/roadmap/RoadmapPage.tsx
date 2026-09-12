@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { WORDS } from '../../data/words';
 import { buildSession } from '../../core/engine/session-builder';
@@ -42,9 +42,9 @@ export function readCheckpoint(stage: number): CheckpointRecord | null {
 }
 
 /**
- * 500-word Roadmap (§15): 10 stages × 50 in file order, unlock gates, rings,
+ * 499-word Roadmap: 10 stages in file order, unlock gates, rings,
  * per-stage word grids, checkpoint quizzes, honest pace projection, quiet
- * milestones (50/100/250/500) as typographic moments.
+ * milestones as typographic moments.
  */
 export default function RoadmapPage() {
   const navigate = useNavigate();
@@ -53,6 +53,36 @@ export default function RoadmapPage() {
   const launchPlan = useSessionPersist((s) => s.launchPlan);
   const [openStage, setOpenStage] = useState<number | null>(null);
   const [milestone, setMilestone] = useState<{ n: number; label: string } | null>(null);
+  const milestoneContinueRef = useRef<HTMLButtonElement | null>(null);
+
+  // Milestone overlay: Esc closes, focus lands on Continue, tab stays inside.
+  useEffect(() => {
+    if (!milestone) return;
+    const t = setTimeout(() => milestoneContinueRef.current?.focus(), 30);
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setMilestone(null);
+      if (e.key === 'Tab') {
+        const root = document.querySelector('[aria-label="Milestone"]');
+        if (!root) return;
+        const focusables = Array.from(root.querySelectorAll<HTMLElement>('button'));
+        if (focusables.length === 0) return;
+        const first = focusables[0]!;
+        const last = focusables[focusables.length - 1]!;
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      clearTimeout(t);
+    };
+  }, [milestone]);
 
   const gates = useMemo(() => stageGates(words), [words]);
   const now = Date.now();
@@ -65,6 +95,13 @@ export default function RoadmapPage() {
     () => paceProjection(daily, now, active.length, WORDS.length),
     [daily, now, active.length],
   );
+  // Read checkpoint records once per words change, not per render per stage.
+  const checkpoints = useMemo(() => {
+    const out: Record<number, CheckpointRecord | null> = {};
+    for (let s = 0; s < 10; s++) out[s] = readCheckpoint(s);
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [words]);
 
   // Quiet milestones: first time crossing 50/100/250/500 introductions.
   useEffect(() => {
@@ -108,10 +145,11 @@ export default function RoadmapPage() {
         words: stageWords, progress: full.words, confusion: full.confusion,
         settings: { ...settings, sessionLengthTarget: 15 },
         seed: baseSeed + h, now: Date.now(), introducedToday, daysSinceActive,
-        rollingSuccess: rolling, speechAvailable: true,
+        rollingSuccess: rolling, speechAvailable: typeof window !== 'undefined' && 'speechSynthesis' in window,
       }),
     );
     const items = [...halves[0]!.items, ...halves[1]!.items].slice(0, 30);
+    if (items.length === 0) return;
     launchPlan({
       id: `chk_${stage}_${Date.now().toString(36)}`, createdAt: Date.now(),
       seed: baseSeed, items, meta: { kind: 'checkpoint', stage },
@@ -131,11 +169,11 @@ export default function RoadmapPage() {
       />
 
       {milestone && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-paper/95 p-6" role="dialog" aria-modal="true" aria-label="Milestone">
-          <div className="text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-paper/95 p-6 animate-fade" role="dialog" aria-modal="true" aria-label="Milestone">
+          <div className="text-center animate-rise">
             <p className="font-display text-[clamp(3rem,12vw,6rem)] leading-none">{milestone.n}</p>
             <p className="mx-auto mt-3 max-w-md text-lg text-ink-soft">{milestone.label}</p>
-            <Button className="mt-6" onClick={() => setMilestone(null)}>Continue</Button>
+            <Button ref={milestoneContinueRef} className="mt-6" onClick={() => setMilestone(null)}>Continue</Button>
           </div>
         </div>
       )}
@@ -144,21 +182,22 @@ export default function RoadmapPage() {
         {gates.map((g) => {
           const stageWords = WORDS.filter((w) => w.stage === g.stage);
           const pct = g.total === 0 ? 0 : g.atActiveOrAbove / g.total;
-          const check = readCheckpoint(g.stage);
+          const check = checkpoints[g.stage];
           return (
             <li key={g.stage}>
-              <Card className={!g.unlocked ? 'opacity-70' : ''}>
+              <Card className={!g.unlocked ? 'opacity-75' : ''}>
                 <div className="flex items-center gap-4">
-                  <ProgressRing value={pct} label={`Stage ${g.stage + 1}: ${g.atActiveOrAbove} of ${g.total} words active`} />
+                  <ProgressRing value={pct} label={`Stage ${g.stage + 1}: ${g.atActiveOrAbove} of ${g.total} words active${g.unlocked ? '' : ', locked'}`} />
                   <div className="min-w-0 flex-1">
                     <h2 className="font-display text-xl">
                       Stage {g.stage + 1} · {STAGE_SUBTITLES[g.stage]}
+                      {!g.unlocked && <span className="ml-2 inline-flex items-center gap-1 align-middle text-xs font-sans font-normal text-ink-soft"><Icon name="x" size={12} /> Locked</span>}
                     </h2>
                     <p className="text-sm text-ink-soft">
                       Words {g.stage * 50 + 1}–{g.stage * 50 + g.total} · {g.atActiveOrAbove}/{g.total} active
-                      {!g.unlocked && ' · unlocks at 80% of the previous stage'}
-                      {g.sealed && ' · sealed'}
-                      {check && (check.pass ? ` · checkpoint ${check.accuracy}%` : ` · checkpoint ${check.accuracy}% — re-review advised`)}
+                      {!g.unlocked && ' · unlocks when 80% of the previous stage is active'}
+                      {g.sealed && ' · complete'}
+                      {check && (check.pass ? ` · quiz passed ${check.accuracy}%` : ` · quiz ${check.accuracy}% — review advised`)}
                     </p>
                   </div>
                   <button
@@ -190,6 +229,13 @@ export default function RoadmapPage() {
                       >
                         <Icon name="flag" size={16} /> Checkpoint quiz (30)
                       </Button>
+                      {(!g.unlocked || stageWords.every((w) => !words[w.id]?.introducedAt)) && (
+                        <span className="text-sm text-ink-soft">
+                          {!g.unlocked
+                            ? 'Unlocks when the previous stage is 80% active.'
+                            : 'Meet these words in Learn first, then quiz.'}
+                        </span>
+                      )}
                       {check && !check.pass && (
                         <span className="text-sm text-ink-soft">Last attempt {check.accuracy}% — targeted review will rebuild these words.</span>
                       )}
@@ -202,7 +248,7 @@ export default function RoadmapPage() {
         })}
       </ol>
       <div className="mt-4"><MasteryLegend /></div>
-      <p className="mt-3 text-sm text-ink-faint">
+      <p className="mt-3 text-sm text-ink-soft">
         Reviews continue cumulatively from all unlocked stages — no stage is ever done and discarded.{' '}
         <Link to="/library" className="underline">Browse every word</Link>
       </p>

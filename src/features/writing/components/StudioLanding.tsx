@@ -47,11 +47,11 @@ export function StudioLanding({ targets, recent, hasWords, onPractice, onMode }:
                 {targets.map((t, i) => (
                   <li key={t.word.id}>
                     <Card className="flex h-full flex-col gap-1">
-                      <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">Target {i + 1}</p>
+                      <p className="text-xs font-medium tracking-wide text-ink-soft uppercase">Target {i + 1}</p>
                       <p className="font-display text-2xl">{t.word.word}</p>
                       <p className="text-sm text-ink-soft">{t.word.shortDefinition}</p>
                       <p className="text-sm">{t.reason}</p>
-                      <p className="text-xs text-ink-faint">{t.task === 'frame' ? 'Guided frame' : t.task === 'transform' ? 'Register transformation' : 'Free production'} · {t.minutes} min</p>
+                      <p className="text-xs text-ink-soft">{t.task === 'frame' ? 'Guided frame' : t.task === 'transform' ? 'Register transformation' : 'Free production'} · {t.minutes} min</p>
                       <div className="mt-auto pt-2">
                         <Button variant="secondary" onClick={() => onPractice(t)}>
                           Practice this word <Icon name="arrow-right" size={16} />
@@ -77,7 +77,7 @@ export function StudioLanding({ targets, recent, hasWords, onPractice, onMode }:
                   <span>
                     <span className="block font-display text-xl">{m.title}</span>
                     <span className="mt-1 block text-[15px] text-ink-soft">{m.body}</span>
-                    <span className="mt-1 block text-xs text-ink-faint">{m.minutes}</span>
+                    <span className="mt-1 block text-xs text-ink-soft">{m.minutes}</span>
                   </span>
                 </button>
               ))}
@@ -94,7 +94,7 @@ export function StudioLanding({ targets, recent, hasWords, onPractice, onMode }:
                   <li key={`${r.wordId}-${r.timestamp}-${i}`} className="flex items-center gap-2 px-4 py-2.5 text-[15px]">
                     <Icon name={r.correct ? 'check' : 'x'} size={16} className={r.correct ? 'text-good' : 'text-bad'} />
                     <Link to={`/word/${r.wordId}`} className="font-medium underline-offset-2 hover:underline">{r.word}</Link>
-                    <span className="ml-auto text-sm text-ink-faint">
+                    <span className="ml-auto text-sm text-ink-soft">
                       {new Date(r.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                     </span>
                   </li>

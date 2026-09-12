@@ -24,7 +24,7 @@ export function BengaliText({ bengali, recallStrength = 0, className = '' }: {
   return (
     <button
       onClick={() => setRevealed(true)}
-      className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg border border-dashed border-line-strong px-3 py-1.5 text-sm text-ink-faint transition-calm hover:border-accent hover:text-accent-deep dark:hover:text-accent"
+      className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg border border-dashed border-line-strong px-3 py-1.5 text-sm text-ink-soft transition-calm hover:border-accent hover:text-accent-deep dark:hover:text-accent"
     >
       <Icon name="eye" size={16} />
       <span lang="bn" className="font-bengali">বাংলা দেখুন</span>

@@ -33,6 +33,11 @@ export function TypedRecallActivity({ item, word, phase, onSubmit, noteHint, hin
   useEffect(() => {
     if (phase !== 'stimulus') return;
     const onKey = (e: KeyboardEvent): void => {
+      // Native input Enter already submits via form semantics; this global
+      // handler is for keyboard-first operation outside fields. Skip when the
+      // event comes from any editable field to avoid double-submit.
+      const t = e.target as HTMLElement | null;
+      if (t?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
       if (e.key === 'Enter' && value.trim()) submit();
     };
     window.addEventListener('keydown', onKey);
@@ -67,7 +72,7 @@ export function TypedRecallActivity({ item, word, phase, onSubmit, noteHint, hin
       {cue && (
         <p className="mb-3 font-mono text-lg tracking-[0.2em] text-ink-soft" aria-label={`${answer.length} letters, starting with ${starter}`}>
           {masked}
-          <span className="ml-2 font-sans text-sm tracking-normal text-ink-faint">({answer.length} letters)</span>
+          <span className="ml-2 font-sans text-sm tracking-normal text-ink-soft">({answer.length} letters)</span>
         </p>
       )}
       <div className="flex flex-col gap-3">
@@ -80,14 +85,14 @@ export function TypedRecallActivity({ item, word, phase, onSubmit, noteHint, hin
           onChange={(e) => setValue(e.target.value)}
           placeholder={cue ? `Starts with “${starter}”…` : 'Type the word…'}
           aria-label={`Type the word for: ${prompt}`}
-          className="min-h-[52px] w-full rounded-xl border-2 border-line bg-paper px-4 py-3 font-display text-2xl tracking-wide transition-calm placeholder:text-ink-faint focus:border-accent focus:outline-none disabled:opacity-70"
+          className="min-h-[52px] w-full rounded-xl border-2 border-line bg-paper px-4 py-3 font-display text-2xl tracking-wide transition-calm placeholder:text-ink-soft focus:border-accent focus:outline-none disabled:opacity-70"
           {...INPUT_HYGIENE}
         />
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={submit}
             disabled={phase !== 'stimulus' || !value.trim()}
-            className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg bg-accent px-5 py-2.5 font-medium text-paper transition-calm hover:brightness-110 disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-faint"
+            className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg bg-accent px-5 py-2.5 font-medium text-paper transition-calm hover:brightness-110 disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-soft"
           >
             Check
           </button>
