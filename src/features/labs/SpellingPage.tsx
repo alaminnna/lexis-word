@@ -16,17 +16,13 @@ import {
 import { useLabRound } from './useLabRound';
 import { mulberry32, shuffled } from '../../utils/rng';
 
-const STEPS = [
-  'Chunks', 'Letters', 'Type + hint', 'Flash type', 'Dictation', 'Meaning → spell',
-] as const;
-
-const STEP_META: { short: string; desc: string; range: string }[] = [
-  { short: 'Chunks', desc: 'Order the parts', range: '< 15' },
-  { short: 'Letters', desc: 'Tap letters in order', range: '15–29' },
-  { short: 'Type + hint', desc: '2 starter letters', range: '30–44' },
-  { short: 'Flash type', desc: '1.5s glance, then type', range: '45–59' },
-  { short: 'Dictation', desc: 'Hear it, type it', range: '60–74' },
-  { short: 'Meaning → spell', desc: 'Definition only', range: '75+' },
+const STEP_META: { short: string; title: string; desc: string; range: string }[] = [
+  { short: 'Chunks', title: 'Rebuild in chunks', desc: 'Order the parts of the word', range: 'strength < 15' },
+  { short: 'Letters', title: 'Build from letters', desc: 'Tap the letters in order', range: 'strength 15–29' },
+  { short: 'Type + hint', title: 'Type with a hint', desc: 'Two starter letters, then you', range: 'strength 30–44' },
+  { short: 'Flash type', title: 'Watch, then type', desc: 'A 1.5s glance, then memory', range: 'strength 45–59' },
+  { short: 'Dictation', title: 'Hear it, type it', desc: 'Listen, then spell', range: 'strength 60–74' },
+  { short: 'Meaning → spell', title: 'Spell from meaning', desc: 'Definition only, no letters', range: 'strength 75+' },
 ];
 
 /** Naive syllable-ish splitter (documented heuristic for the ladder, not linguistics). */
@@ -73,9 +69,11 @@ function ChunkActivity({ word, onDone }: { word: WordRecord; onDone: (correct: b
 
   return (
     <div>
-      <p className="mb-3 text-lg leading-relaxed text-balance sm:text-xl">Rebuild <strong>{word.word.length}-letter</strong> word from its chunks, in order.</p>
-      <div className="mb-3 flex min-h-[72px] flex-wrap gap-2 rounded-xl border-2 border-line p-3 font-display text-2xl" aria-label="Your assembly">
-        {picked.length === 0 && <span className="text-ink-faint">Tap chunks below…</span>}
+      <p className="mb-3 text-lg leading-relaxed text-balance">
+        Rebuild the <strong>{word.word.length}-letter</strong> word from its chunks, in order.
+      </p>
+      <div className="mb-3 flex min-h-[68px] flex-wrap gap-2 rounded-xl border-2 border-line bg-paper-deep/50 p-3 font-display text-2xl" aria-label="Your assembly">
+        {picked.length === 0 && <span className="text-base text-ink-faint">Tap chunks below…</span>}
         {picked.map((bi, i) => (
           <button key={i} onClick={() => result === null && setPicked(picked.filter((_, j) => j !== i))}
             aria-label={`Remove ${chunks[bank[bi]!]}`}
@@ -118,7 +116,7 @@ function TailoredTip({ wordId, word }: { wordId: string; word: string }) {
   const top = profile ? (Object.entries(profile).sort((a, b) => b[1] - a[1])[0]?.[0] as SpellingErrorKind | undefined) : undefined;
   if (!top) return null;
   return (
-    <p className="flex gap-2 rounded-xl border border-warn/20 bg-warn-soft px-3 py-2 text-[15px] leading-relaxed">
+    <p className="flex gap-2 rounded-xl bg-warn-soft px-3 py-2.5 text-[15px] leading-relaxed">
       <Icon name="alert" size={18} className="mt-0.5 shrink-0 text-warn" />
       <span>Your pattern here: <strong>{SPELLING_ERROR_LABELS[top]}</strong> — {emphasize(word, top)}</span>
     </p>
@@ -157,55 +155,10 @@ function stepFor(strength: number): number {
   return 5;
 }
 
-function LadderButton({ index, active, onSelect, layout }: {
-  index: number; active: boolean; onSelect: () => void; layout: 'row' | 'col';
-}) {
-  const meta = STEP_META[index]!;
-  if (layout === 'row') {
-    return (
-      <button
-        role="radio"
-        aria-checked={active}
-        onClick={onSelect}
-        className={`min-h-[48px] shrink-0 snap-start rounded-xl border px-4 py-2 text-left transition-calm ${
-          active
-            ? 'border-accent bg-accent-soft font-medium text-accent-deep dark:text-accent'
-            : 'border-line text-ink-soft hover:border-line-strong hover:text-ink'
-        }`}
-      >
-        <span className="text-[15px] whitespace-nowrap">{index + 1}. {meta.short}</span>
-      </button>
-    );
-  }
-  return (
-    <button
-      role="radio"
-      aria-checked={active}
-      aria-current={active ? 'step' : undefined}
-      onClick={onSelect}
-      className={`w-full rounded-xl border p-3 text-left transition-calm ${
-        active
-          ? 'border-accent bg-accent-soft'
-          : 'border-line hover:border-line-strong'
-      }`}
-    >
-      <span className="flex items-center gap-3">
-        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-display text-lg ${
-          active ? 'bg-accent text-paper' : 'bg-paper-deep text-ink-soft'
-        }`} aria-hidden>{index + 1}</span>
-        <span>
-          <span className={`block text-[15px] font-medium ${active ? 'text-accent-deep dark:text-accent' : 'text-ink'}`}>{meta.short}</span>
-          <span className="block text-[13px] text-ink-soft">{meta.desc} · {meta.range}</span>
-        </span>
-      </span>
-    </button>
-  );
-}
-
 /**
- * Spelling Lab (§11): the six-rung ladder ordered by spelling strength, the
- * learner's error-pattern profile, and hints tailored to actual error classes.
- * Responsive: PC 3-col (ladder | stage | insights), phone stacked + sticky actions.
+ * Spelling Lab (§11): six-rung ladder, weakest-first, error-pattern aware.
+ * One calm centered column — the ladder is a slim stepper, the stage has
+ * focus, and supporting info sits quietly underneath on every screen size.
  */
 export default function SpellingPage() {
   const lab = useLabRound('spelling');
@@ -277,8 +230,8 @@ export default function SpellingPage() {
 
   const word = lab.word;
   const activeStep = step ?? 0;
-  const currentStrength = word ? (allProfiles[word.id]?.dimensions.spelling.strength ?? 0) : 0;
-  const accuracy = lab.tally.total > 0 ? Math.round((lab.tally.correct / lab.tally.total) * 100) : null;
+  const meta = STEP_META[activeStep]!;
+  const currentStrength = word ? Math.round(allProfiles[word.id]?.dimensions.spelling.strength ?? 0) : 0;
 
   return (
     <div>
@@ -288,127 +241,130 @@ export default function SpellingPage() {
       <PageHeader
         title="Spelling Lab"
         sub={lab.tally.total > 0
-          ? <span className="tabular-nums">{lab.tally.correct}/{lab.tally.total} correct this visit{accuracy !== null ? ` · ${accuracy}%` : ''}</span>
+          ? <span className="tabular-nums">{lab.tally.correct}/{lab.tally.total} correct this visit</span>
           : 'Build it letter by letter.'}
       />
 
-      {lab.tally.total > 0 && (
-        <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-paper-deep" role="progressbar" aria-valuenow={lab.tally.correct} aria-valuemin={0} aria-valuemax={lab.tally.total} aria-label="Session accuracy">
-          <div className="h-full rounded-full bg-accent transition-calm" style={{ width: `${(lab.tally.correct / Math.max(1, lab.tally.total)) * 100}%` }} />
-        </div>
+      {/* Ladder stepper — one row of rungs on every screen size */}
+      <div role="radiogroup" aria-label="Ladder rung" className="mb-1 flex items-center">
+        {STEP_META.map((m, i) => {
+          const active = i === activeStep;
+          return (
+            <div key={m.short} className="flex flex-1 items-center last:flex-none">
+              <button
+                role="radio"
+                aria-checked={active}
+                aria-label={`Rung ${i + 1}: ${m.short} — ${m.desc}`}
+                title={`${m.short} (${m.range})`}
+                onClick={() => word && nextWord(i)}
+                className={`flex min-h-[44px] min-w-[44px] cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl px-1 transition-calm ${
+                  active ? 'bg-accent-soft' : 'hover:bg-paper-deep'
+                }`}
+              >
+                <span className={`flex h-7 w-7 items-center justify-center rounded-full text-[13px] font-medium tabular-nums transition-calm ${
+                  active ? 'bg-accent text-paper' : 'bg-paper-deep text-ink-soft'
+                }`} aria-hidden>{i + 1}</span>
+                <span className={`hidden text-[11px] leading-none whitespace-nowrap sm:block ${
+                  active ? 'font-medium text-accent-deep dark:text-accent' : 'text-ink-faint'
+                }`} aria-hidden>{m.short}</span>
+              </button>
+              {i < STEP_META.length - 1 && (
+                <div aria-hidden className={`mx-0.5 h-px min-w-2 flex-1 ${i < activeStep ? 'bg-accent' : 'bg-line'}`} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <p className="mb-4 px-1 text-[13px] text-ink-faint">
+        Rung {activeStep + 1} of 6 · {meta.desc} ({meta.range})
+      </p>
+
+      {/* Stage */}
+      {word && lab.activityProps && (
+        <Card key={lab.roundKey} className="p-5 sm:p-6">
+          <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-display text-2xl font-medium tracking-tight text-balance">{meta.title}</h2>
+            <p className="shrink-0 text-[13px] text-ink-faint tabular-nums">
+              {word.word.length} letters · strength {currentStrength}
+            </p>
+          </div>
+          {activeStep === 5 && (
+            <div className="mt-2 mb-1">
+              <p className="text-lg leading-relaxed">{word.shortDefinition}</p>
+              <BengaliText bengali={word.bengali} recallStrength={0} />
+            </div>
+          )}
+          <div className="mt-2">
+            <TailoredTip wordId={word.id} word={word.word} />
+          </div>
+          <div className="mt-4">
+            {activeStep === 0 && (
+              <ChunkActivity word={word} onDone={(correct, typed) => lab.activityProps?.onSubmit({ correct, typed })} />
+            )}
+            {activeStep === 1 && <SpellingBuildActivity {...lab.activityProps} />}
+            {activeStep === 2 && <TypedRecallActivity {...lab.activityProps} cue cueLetters={2} />}
+            {activeStep === 3 && <FlashTypeActivity {...lab.activityProps} />}
+            {activeStep === 4 && <DictationActivity {...lab.activityProps} wordOnly />}
+            {activeStep === 5 && <TypedRecallActivity {...lab.activityProps} />}
+          </div>
+          {lab.phase === 'feedback' && (
+            <div className="sticky bottom-[76px] z-20 mt-5 md:static">
+              <Button className="w-full sm:w-auto" onClick={() => nextWord(activeStep)} autoFocus>Next</Button>
+            </div>
+          )}
+        </Card>
       )}
 
-      {/* Phone: horizontal stepper */}
-      <div role="radiogroup" aria-label="Ladder rung" className="mb-4 flex gap-2 overflow-x-auto pb-2 lg:hidden">
-        {STEPS.map((t, i) => (
-          <LadderButton key={t} index={i} layout="row" active={i === activeStep} onSelect={() => word && nextWord(i)} />
-        ))}
-      </div>
-
-      <div className="grid items-start gap-4 lg:grid-cols-[240px_minmax(0,1fr)_280px]">
-        {/* PC: vertical ladder */}
-        <nav aria-label="Ladder rungs" className="hidden lg:block">
-          <div role="radiogroup" aria-label="Ladder rung" className="flex flex-col gap-2">
-            {STEPS.map((t, i) => (
-              <LadderButton key={t} index={i} layout="col" active={i === activeStep} onSelect={() => word && nextWord(i)} />
-            ))}
-          </div>
-          <p className="mt-3 px-1 text-[13px] leading-relaxed text-ink-faint">
-            Rung auto-matches spelling strength. Tap any rung to drill it.
-          </p>
-        </nav>
-
-        {/* Stage */}
-        {word && lab.activityProps && (
-          <Card key={lab.roundKey} className="p-5 sm:p-6 lg:p-8">
-            <p className="mb-1 text-[13px] font-medium tracking-wide text-ink-faint uppercase">
-              Rung {activeStep + 1} of 6 · {STEP_META[activeStep]!.short}
-            </p>
-            <h2 className="mb-3 font-display text-2xl font-medium tracking-tight text-balance sm:text-3xl">
-              {activeStep === 0 ? 'Rebuild in chunks' : activeStep === 5 ? 'Spell from meaning' : word.word.length <= 12 ? `Spell “${word.word}”` : 'Spell the word'}
-            </h2>
-            {activeStep === 5 && (
-              <div className="mb-3">
-                <p className="text-lg leading-relaxed sm:text-xl">{word.shortDefinition}</p>
-                <BengaliText bengali={word.bengali} recallStrength={0} />
-              </div>
-            )}
-            <TailoredTip wordId={word.id} word={word.word} />
-            <div className="mt-4">
-              {activeStep === 0 && (
-                <ChunkActivity word={word} onDone={(correct, typed) => lab.activityProps?.onSubmit({ correct, typed })} />
-              )}
-              {activeStep === 1 && <SpellingBuildActivity {...lab.activityProps} />}
-              {activeStep === 2 && <TypedRecallActivity {...lab.activityProps} cue cueLetters={2} />}
-              {activeStep === 3 && <FlashTypeActivity {...lab.activityProps} />}
-              {activeStep === 4 && <DictationActivity {...lab.activityProps} wordOnly />}
-              {activeStep === 5 && <TypedRecallActivity {...lab.activityProps} />}
-            </div>
-            {lab.phase === 'feedback' && (
-              <div className="sticky bottom-[76px] z-20 mt-5 md:static">
-                <Button className="w-full sm:w-auto" onClick={() => nextWord(activeStep)} autoFocus>Next</Button>
-              </div>
-            )}
-          </Card>
-        )}
-
-        {/* Insights rail */}
-        <aside className="space-y-4 lg:sticky lg:top-4">
-          {word && (
-            <Card className="p-4">
-              <p className="text-[13px] font-medium tracking-wide text-ink-faint uppercase">Now practicing</p>
-              <p className="mt-1 font-display text-2xl tracking-tight">{word.word}</p>
-              <p className="mt-1 text-sm text-ink-soft tabular-nums">
-                {word.word.length} letters · strength {Math.round(currentStrength)}
-              </p>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-paper-deep" aria-hidden>
-                <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.max(4, currentStrength))}%` }} />
-              </div>
-            </Card>
-          )}
-
-          <Card className="p-4">
-            <h2 className="mb-2 font-display text-lg">Up next</h2>
-            <ul className="space-y-1">
-              {pool.slice(0, 5).map((w) => {
-                const s = allProfiles[w.id]?.dimensions.spelling.strength ?? 0;
-                const isCurrent = w.id === word?.id;
-                return (
-                  <li key={w.id}>
-                    <button
-                      onClick={() => jumpToWord(w.id, activeStep)}
-                      aria-current={isCurrent ? 'true' : undefined}
-                      className={`flex min-h-[44px] w-full cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-1.5 text-left text-[15px] transition-calm ${
-                        isCurrent ? 'border-accent bg-accent-soft font-medium text-accent-deep dark:text-accent' : 'border-transparent hover:border-line hover:bg-paper-deep'
-                      }`}
-                    >
-                      <span className="truncate">{w.word}</span>
-                      <span className="shrink-0 text-[13px] text-ink-faint tabular-nums">{Math.round(s)}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-            <p className="mt-2 text-[13px] text-ink-faint">{pool.length} word{pool.length === 1 ? '' : 's'} weakest-first.</p>
-          </Card>
-
-          {learnerProfile.length > 0 && (
-            <Card className="p-4">
-              <h2 className="mb-1 font-display text-lg">Your error patterns</h2>
-              <ul className="space-y-2 text-[15px] text-ink-soft">
-                {learnerProfile.slice(0, 4).map((p) => (
-                  <li key={p.kind}>
-                    <span className="flex items-baseline justify-between gap-2">
-                      <strong className="font-medium text-ink">{SPELLING_ERROR_LABELS[p.kind]}</strong>
-                      <span className="text-[13px] text-ink-faint tabular-nums">{p.count} slip{p.count === 1 ? '' : 's'}</span>
+      {/* Quiet supporting info — same content on PC and phone */}
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <Card className="p-4">
+          <h2 className="mb-2 text-[15px] font-medium">Up next <span className="font-normal text-ink-faint">· weakest first</span></h2>
+          <ul className="space-y-0.5">
+            {pool.slice(0, 4).map((w) => {
+              const s = Math.round(allProfiles[w.id]?.dimensions.spelling.strength ?? 0);
+              const isCurrent = w.id === word?.id;
+              return (
+                <li key={w.id}>
+                  <button
+                    onClick={() => jumpToWord(w.id, activeStep)}
+                    aria-current={isCurrent ? 'true' : undefined}
+                    className={`flex min-h-[44px] w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 text-left text-[15px] transition-calm ${
+                      isCurrent ? 'bg-accent-soft font-medium text-accent-deep dark:text-accent' : 'hover:bg-paper-deep'
+                    }`}
+                  >
+                    <span className="truncate">{w.word}</span>
+                    <span className="h-1 w-16 shrink-0 overflow-hidden rounded-full bg-paper-deep" aria-hidden>
+                      <span className="block h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.max(6, s))}%` }} />
                     </span>
-                    <span className="block truncate text-[13px] text-ink-faint">{p.words.slice(0, 3).map((id) => WORDS.find((w) => w.id === id)?.word ?? id).join(', ')}{p.words.length > 3 ? '…' : ''}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+
+        <Card className="p-4">
+          <h2 className="mb-2 text-[15px] font-medium">Your error patterns</h2>
+          {learnerProfile.length === 0 ? (
+            <p className="text-[14px] leading-relaxed text-ink-soft">
+              No slips recorded yet — make a few and this becomes your personal hit-list.
+            </p>
+          ) : (
+            <ul className="space-y-2 text-[14px]">
+              {learnerProfile.slice(0, 3).map((p) => (
+                <li key={p.kind} className="flex items-baseline justify-between gap-2">
+                  <span className="min-w-0">
+                    <strong className="font-medium">{SPELLING_ERROR_LABELS[p.kind]}</strong>
+                    <span className="block truncate text-[13px] text-ink-faint">
+                      {p.words.slice(0, 3).map((id) => WORDS.find((w) => w.id === id)?.word ?? id).join(', ')}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-[13px] text-ink-faint tabular-nums">{p.count}</span>
+                </li>
+              ))}
+            </ul>
           )}
-        </aside>
+        </Card>
       </div>
     </div>
   );

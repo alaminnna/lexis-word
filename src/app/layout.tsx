@@ -173,7 +173,7 @@ export function AppLayout() {
       </aside>
 
       <div className="md:pl-60">
-        <div className="mx-auto w-full max-w-3xl space-y-3 px-4 pt-4 pb-28 md:pb-12 lg:max-w-6xl">
+        <div className="mx-auto w-full max-w-3xl space-y-3 px-4 pt-4 pb-28 md:pb-12">
           <ApiBanner />
           <QuotaNotice />
           <main id="main">
