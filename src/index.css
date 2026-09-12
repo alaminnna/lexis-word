@@ -1,0 +1,160 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/fraunces";
+@import "@fontsource/noto-sans-bengali/400.css";
+@import "@fontsource/noto-sans-bengali/500.css";
+@import "@fontsource/noto-sans-bengali/600.css";
+
+/* Hallmark · pre-emit critique: P5 H4 E5 S4 R5 V4
+ * Going with: audience = Bengali-speaking IELTS candidates · use = daily
+ * focused sessions · tone = calm scholarly editorial. Genre: editorial.
+ * Theme: spec-locked Lexis tokens (paper/ink/teal/Fraunces). */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --paper: #faf9f6;
+  --paper-deep: #f3f1ea;
+  --ink: #1c2430;
+  --ink-soft: #4b5563;
+  --ink-faint: #8a94a3;
+  --line: #e4e1d8;
+  --line-strong: #d3cfc2;
+  --accent: #0f766e;
+  --accent-deep: #0b5f59;
+  --accent-soft: #e6f2f0;
+  --accent-mist: #f0f7f6;
+  --good: #15803d;
+  --good-soft: #e9f5ec;
+  --bad: #be123c;
+  --bad-soft: #fbe9ee;
+  --warn: #b45309;
+  --warn-soft: #faf1e3;
+}
+
+.dark {
+  --paper: #141a22;
+  --paper-deep: #1b2330;
+  --ink: #edeae2;
+  --ink-soft: #b9bfc9;
+  --ink-faint: #7e8894;
+  --line: #2a3442;
+  --line-strong: #3a4656;
+  --accent: #2dd4bf;
+  --accent-deep: #5eead4;
+  --accent-soft: #123b37;
+  --accent-mist: #16292a;
+  --good: #4ade80;
+  --good-soft: #12351f;
+  --bad: #fb7185;
+  --bad-soft: #3d1420;
+  --warn: #fbbf24;
+  --warn-soft: #3a2a10;
+}
+
+@theme inline {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Fraunces Variable", Georgia, "Times New Roman", serif;
+  --font-bengali: "Noto Sans Bengali", "Inter Variable", sans-serif;
+
+  --color-paper: var(--paper);
+  --color-paper-deep: var(--paper-deep);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-mist: var(--accent-mist);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+
+  /* 6-step word-mastery spectrum: neutral → deep teal */
+  --color-m0: #eceae3;
+  --color-m1: #d9e6e2;
+  --color-m2: #bcd4cd;
+  --color-m3: #8fb8ad;
+  --color-m4: #4d9487;
+  --color-m5: #0f766e;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    overflow-x: clip;
+  }
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: clip;
+  }
+  ::selection {
+    background: #0f766e33;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+  .font-bengali {
+    font-family: var(--font-bengali);
+  }
+  /* Calm feedback micro-interactions (§16): 150–250ms ease-out. */
+  .transition-calm {
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  @keyframes lexis-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+  .animate-shake {
+    animation: lexis-shake 200ms ease-out;
+  }
+  /* About page entrance — calm staggered rise, editorial not bouncy. */
+  @keyframes lexis-rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes lexis-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes lexis-orb {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(12px, -10px) scale(1.08); }
+  }
+  .animate-rise {
+    opacity: 0;
+    animation: lexis-rise 600ms cubic-bezier(0.33, 1, 0.68, 1) forwards;
+  }
+  .animate-fade {
+    opacity: 0;
+    animation: lexis-fade 500ms ease-out forwards;
+  }
+  .animate-orb {
+    animation: lexis-orb 7s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-shake { animation: none; }
+    .animate-rise, .animate-fade, .animate-orb { animation: none; opacity: 1; }
+    .transition-calm { transition-duration: 0.01ms; }
+  }
+}
