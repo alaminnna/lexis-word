@@ -185,7 +185,7 @@ export default function SpellingPage() {
     setStep(s);
     const base = {
       wordId: word.id, difficulty: 2 as const,
-      reason: { kind: 'weak-dimension' as const, humanText: `Spelling Lab — rung ${s + 1} of 6 for ${word.word}.` },
+      reason: { kind: 'weak-dimension' as const, humanText: `Spelling Lab — ${STEP_META[s]!.short} mode for ${word.word}.` },
     };
     const items: SessionItem[] = [
       { ...base, activity: 'spelling-build', dimension: 'spelling', answer: word.word },
@@ -245,38 +245,30 @@ export default function SpellingPage() {
           : 'Build it letter by letter.'}
       />
 
-      {/* Ladder stepper — one row of rungs on every screen size */}
-      <div role="radiogroup" aria-label="Ladder rung" className="mb-1 flex items-center">
+      {/* Practice modes — free choice, no forced order */}
+      <div role="radiogroup" aria-label="Practice mode" className="mb-1 flex flex-wrap gap-1.5">
         {STEP_META.map((m, i) => {
           const active = i === activeStep;
           return (
-            <div key={m.short} className="flex flex-1 items-center last:flex-none">
-              <button
-                role="radio"
-                aria-checked={active}
-                aria-label={`Rung ${i + 1}: ${m.short} — ${m.desc}`}
-                title={`${m.short} (${m.range})`}
-                onClick={() => word && nextWord(i)}
-                className={`flex min-h-[44px] min-w-[44px] cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl px-1 transition-calm ${
-                  active ? 'bg-accent-soft' : 'hover:bg-paper-deep'
-                }`}
-              >
-                <span className={`flex h-7 w-7 items-center justify-center rounded-full text-[13px] font-medium tabular-nums transition-calm ${
-                  active ? 'bg-accent text-paper' : 'bg-paper-deep text-ink-soft'
-                }`} aria-hidden>{i + 1}</span>
-                <span className={`hidden text-[11px] leading-none whitespace-nowrap sm:block ${
-                  active ? 'font-medium text-accent-deep dark:text-accent' : 'text-ink-faint'
-                }`} aria-hidden>{m.short}</span>
-              </button>
-              {i < STEP_META.length - 1 && (
-                <div aria-hidden className={`mx-0.5 h-px min-w-2 flex-1 ${i < activeStep ? 'bg-accent' : 'bg-line'}`} />
-              )}
-            </div>
+            <button
+              key={m.short}
+              role="radio"
+              aria-checked={active}
+              title={`${m.desc} (${m.range})`}
+              onClick={() => word && nextWord(i)}
+              className={`min-h-[44px] cursor-pointer rounded-full border px-4 text-[14px] transition-calm ${
+                active
+                  ? 'border-accent bg-accent-soft font-medium text-accent-deep dark:text-accent'
+                  : 'border-line text-ink-soft hover:border-line-strong hover:text-ink'
+              }`}
+            >
+              {m.short}
+            </button>
           );
         })}
       </div>
       <p className="mb-4 px-1 text-[13px] text-ink-faint">
-        Rung {activeStep + 1} of 6 · {meta.desc} ({meta.range})
+        {meta.desc} · auto-matched{word ? <span className="tabular-nums"> (strength {currentStrength})</span> : ''} · switch anytime
       </p>
 
       {/* Stage */}
