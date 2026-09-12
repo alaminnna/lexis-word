@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSettings } from '../../store/settings';
 import { speech } from '../../services/speech';
 import type { WordRecord } from '../../types/domain';
@@ -33,11 +33,16 @@ export function WordHero({ word, recallStrength = 0, autoPlay = false, large = f
   large?: boolean;
 }) {
   const { speak, speaking } = useSpeak();
-  const [played, setPlayed] = useState(false);
-  if (autoPlay && !played) {
-    setPlayed(true);
-    void speak(word.word);
-  }
+  // Auto-play once per word: the runner reuses this instance across items,
+  // so a mount-only flag would speak the first word and stay silent after.
+  const playedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (autoPlay && playedFor.current !== word.id) {
+      playedFor.current = word.id;
+      void speak(word.word);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoPlay, word]);
   return (
     <div className="flex flex-col items-start gap-2">
       <div className="flex w-full items-start justify-between gap-4">

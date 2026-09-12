@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useSpeak } from '../../../components/ui/WordHero';
 import { Icon } from '../../../components/ui/Icon';
 import type { ActivityProps } from './types';
@@ -19,19 +19,21 @@ export function McqActivity(props: ActivityProps & {
 }) {
   const { item, phase, submission, onSubmit, noteReplay, optionWordIds, speakText, autoPlay } = props;
   const options = useMemo(() => item.options ?? [], [item.options]);
-  const [played, setPlayed] = useState(false);
+  // Auto-play once per item: the runner reuses this instance across items,
+  // so a mount-only flag would speak the first item and stay silent after.
+  const playedItem = useRef<ActivityProps['item'] | null>(null);
   const { speak, speaking } = useSpeak();
   const listRef = useRef<HTMLDivElement>(null);
 
   const listening = speakText !== undefined;
 
   useEffect(() => {
-    if (autoPlay && listening && speakText && !played) {
-      setPlayed(true);
+    if (autoPlay && listening && speakText && playedItem.current !== item) {
+      playedItem.current = item;
       void speak(speakText);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoPlay, listening]);
+  }, [autoPlay, listening, item]);
 
   useEffect(() => {
     listRef.current?.querySelector<HTMLButtonElement>('button:not([disabled])')?.focus();
