@@ -282,22 +282,24 @@ function DictionaryStatus() {
       <details className="text-sm text-ink-soft">
         <summary className="cursor-pointer font-medium text-ink">Developer setup</summary>
         <p className="mt-1">
-          Set <code>VITE_DICT_PROXY=1</code> to route through the Vite dev proxy (see README).
+          Local dev: set <code>VITE_DICT_PROXY=1</code> to route through the Vite dev proxy (see README).
+          Production uses the built-in <code>/api/dict-search</code> serverless proxy — no setup needed.
         </p>
       </details>
       <div>
         <Button variant="secondary" onClick={() => void test()} loading={testing}>Test connection</Button>
       </div>
       {detail && <p aria-live="polite" className="text-sm">{detail}</p>}
-      {import.meta.env.DEV && <SeedCacheSection />}
+      <SeedCacheSection />
     </Card>
   );
 }
 
 /**
- * Dev-only: bulk-load `public/dict-seed/*.json` (see scripts/fetch-dict-seed.mjs)
- * into the IndexedDB dictionary cache through the normal normalization path.
- * Same TTL semantics as live fetches; missing files are simply skipped.
+ * One-click offline enrichment: bulk-loads the deployed `dict-seed/*.json`
+ * files (see scripts/fetch-dict-seed.mjs) into the IndexedDB dictionary cache
+ * through the normal normalization path. Same TTL semantics as live fetches;
+ * missing files are simply skipped. Works in dev and production.
  */
 function SeedCacheSection() {
   const [state, setState] = useState<{ phase: 'idle' | 'working' | 'done'; done: number; total: number; errors: number; noFiles: boolean }>(
@@ -326,10 +328,10 @@ function SeedCacheSection() {
 
   return (
     <div className="rounded-lg border border-dashed border-line-strong p-3">
-      <p className="font-medium">Local seed cache (dev)</p>
+      <p className="font-medium">Offline seed cache</p>
       <p className="text-sm text-ink-soft">
-        Loads <code>public/dict-seed/*.json</code> into the dictionary cache.
-        Generate files with <code>node scripts/fetch-dict-seed.mjs</code>.
+        Loads the bundled <code>dict-seed/*.json</code> files into the dictionary cache
+        (499 words, one click — no network needed).
       </p>
       {state.noFiles && (
         <p className="mt-1 text-sm text-warn">No seed files found — run <code>node scripts/fetch-dict-seed.mjs</code> first.</p>

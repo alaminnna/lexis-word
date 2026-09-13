@@ -6,7 +6,6 @@
 import type { DictionaryEntry } from '../types/domain';
 import { idb } from './idb';
 
-const API_ORIGIN = 'https://www.jumpinto.com';
 const API_PATH = '/api/v1/assessment/ielts/vocab/vocabulary/search';
 const TIMEOUT_MS = 8000;
 const CACHE_TTL_MS = 30 * 86_400_000;
@@ -135,7 +134,11 @@ function endpointFor(word: string): string {
   if (import.meta.env.VITE_DICT_PROXY === '1') {
     return `/api-dict${API_PATH}?${query}`;
   }
-  return `${API_ORIGIN}${API_PATH}?${query}`;
+  // Production (and dev without the env flag): same-origin serverless proxy
+  // (api/dict-search.ts on Vercel, vite proxy in dev). Never fetch the
+  // upstream cross-origin from the browser — it sends no CORS headers, so
+  // every direct call fails and the app degrades to "offline".
+  return `/api/dict-search?${query}`;
 }
 
 async function fetchOnce(word: string, signal: AbortSignal): Promise<RawResponse> {

@@ -35,7 +35,10 @@ function ApiBanner() {
   const [seeding, setSeeding] = useState(false);
   useEffect(() => dictionary.onStatusChange(setStatus), []);
   useEffect(() => {
-    if (status === 'unavailable' && import.meta.env.DEV) {
+    // Seed files ship with the app (public/dict-seed → /dict-seed/*.json),
+    // so offer the one-click offline load anywhere it is reachable — dev and
+    // production alike. Previously DEV-gated, which hid the button on Vercel.
+    if (status === 'unavailable') {
       void hasSeedFiles().then((has) => {
         if (has) setSeedOffer(true);
       });
