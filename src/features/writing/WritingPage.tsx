@@ -264,7 +264,7 @@ export default function WritingPage() {
   const recallStrength = words[word.id]?.dimensions.recall.strength ?? 0;
 
   return (
-    <div className="-mx-4 w-full max-w-6xl space-y-5 md:-mx-8">
+    <div className="w-full space-y-5">
       <header>
         <button
           onClick={backToStudio}

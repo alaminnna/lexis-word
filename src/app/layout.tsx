@@ -183,6 +183,9 @@ export function AppLayout() {
   const moreActive = RAIL.slice(4).some((r) =>
     r.end ? location.pathname === r.to : location.pathname === r.to || location.pathname.startsWith(`${r.to}/`),
   );
+  // Writing Studio lays out an editor + guidance column side by side, so it
+  // gets a wider column than the reading-focused max-w-3xl pages.
+  const wide = location.pathname === '/writing' || location.pathname.startsWith('/writing/');
 
   useEffect(() => {
     startPersistence();
@@ -219,7 +222,7 @@ export function AppLayout() {
       </aside>
 
       <div className="md:pl-60">
-        <div className="mx-auto w-full max-w-3xl space-y-3 px-4 pt-4 pb-28 md:pb-12">
+        <div className={`mx-auto w-full ${wide ? 'max-w-6xl' : 'max-w-3xl'} space-y-3 px-4 pt-4 pb-28 md:pb-12`}>
           <ApiBanner />
           <QuotaNotice />
           <main id="main">

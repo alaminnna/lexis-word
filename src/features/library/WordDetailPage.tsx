@@ -69,9 +69,9 @@ export default function WordDetailPage() {
   const nextWord = wordIndex >= 0 && wordIndex < WORDS.length - 1 ? WORDS[wordIndex + 1] : undefined;
 
   const goBack = (): void => {
-    // Deep link (no in-app history) → Back would leave the app; fall back to library.
-    if (window.history.state?.idx > 0) navigate(-1);
-    else navigate('/library');
+    // Always land on the library: history-back is unpredictable here
+    // (word → word walking, deep links, session/review entry points).
+    navigate('/library');
   };
 
   // Word → word navigation reuses this component instance (same /word/:id route):
